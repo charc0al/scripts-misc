@@ -1,0 +1,31 @@
+https://stage2.assurantemployeebenefits.com/Employer/landing/policySelection.faces
+
+document.forms['policySelectionForm']['policySelectionForm:adminSyetemSelect'][0].click()
+
+
+<input type="hidden" name="policySelectionForm" value="policySelectionForm"><input type="hidden" name="partNumber" value=""><input type="hidden" name="systemId" value="COMPASS"><input type="hidden" name="policyNumber" value="5307530"><input type="hidden" name="billGroupKey" value="116355"><input type="hidden" name="billGroup" value="QA Tailored #3 St Louis"><input type="hidden" name="groupCaseId" value=""><input type="hidden" name="accountNumber" value=""><input type="text" style="display:none" name="__LINK_TARGET__">
+
+
+document.forms['policySelectionForm']['policyNumber'].value='5307530';
+document.forms['policySelectionForm']['billGroupKey'].value='116355';
+document.forms['policySelectionForm']['billGroup'].value='QA Tailored #3 St Louis';
+document.forms['policySelectionForm']['systemId'].value='COMPASS'; 
+document.forms['policySelectionForm'].submit();
+
+
+
+
+
+document.forms['policySelectionForm']['__LINK_TARGET__'].disabled=false;
+document.forms['policySelectionForm']['__LINK_TARGET__'].value='policySelectionForm:policyTable:1:policySelectCommandLink';
+document.forms['policySelectionForm']['policyNumber'].value='5307530';
+document.forms['policySelectionForm']['partNumber'].value='';
+document.forms['policySelectionForm']['accountNumber'].value='';
+document.forms['policySelectionForm']['billGroupKey'].value='116355';
+document.forms['policySelectionForm']['billGroup'].value='QA Tailored #3 St Louis';
+document.forms['policySelectionForm']['groupCaseId'].value='';
+document.forms['policySelectionForm']['systemId'].value='COMPASS'; 
+document.forms['policySelectionForm'].submit();
+document.forms['policySelectionForm']['__LINK_TARGET__'].disabled=true;
+
+document.forms['policySelectionForm']['policyNumber'].value='5307530';

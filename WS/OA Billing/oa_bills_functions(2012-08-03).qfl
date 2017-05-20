@@ -1,0 +1,589 @@
+' ----------------------------------- OA Billing Function Library -----------------------------------
+' Library of general plan code functions
+' Author : Charles Mehrer
+' Funcs :
+'			function	dbl							(	str								)
+'			function	fixMbrDetlIDs				(									)
+'			function	fixPolSummaryIDs			(									)
+'			function	memberDetailSummarized		(									)
+'			function	polSummDefault				(									)
+'			function	selectDetailed				(									)
+'			function	selectSummarized			(									)
+'			function	validateBill				(	abll_key						)
+'			function	validateBillElement			(	html_id,	expectedValue,	typ	)
+'			function	validateMemberAdjustments	(	abll_key						)
+'			function 	validateMemberDetails		(	abll_key						)
+'			function	validateMemberDetailTotals  (									)
+'			function	validatePolicy				(	p								)
+'			function	validatePolicySummary		(	abll_key						)
+'			function	validateRemittance			(	abll_key						)
+'			function	validateRemString			(	label,		html_id,		col	)
+'			function	validateRemAmount			(	label,		html_id,		col	)
+'			function	validateRemDate				(	label,		html_id,		col	)
+'			function	viewBill					(	pol_no,		bgrp				)
+'			function	waitLoad					(									)
+'
+' --------------------------------------------- History of Change ----------------------------------------------
+'	Name				Date			Description
+'	----				----			-----------
+'	Charlie Mehrer		2012-07-03		Initial load to Quality Center.
+'	Charlie Mehrer		2012-07-05		Added comments / function list
+'	Charlie Mehrer		2012-07-05		Added wrapper functions validateRem<String/Date/Amount>
+'	Charlie Mehrer		2012-07-09		Added validateMemberDetails
+'	Charlie Mehrer		2012-07-10		Added selectDetailed and selectSummarized
+'	Charlie Mehrer		2012-07-11		Added fixPolSummaryIDs
+'	Charlie Mehrer		2012-07-11		Changed logic in validatePolicySummary to handle bills formatted by department
+'	Charlie Mehrer		2012-07-12		Added wrapper funciton validateBillElement
+'	Charlie Mehrer		2012-07-12		Added polSummDefault()
+'	Charlie Mehrer		2012-07-25		Added validatePolicy and validateBill
+'	Charlie Mehrer		2012-08-02		Added validateMemberAdjustments
+
+on error resume next
+
+pol_no =			null
+bgrp_key =			null
+abll_key_global =	null
+PYRL_TOT = 			null
+DBILL_FRMT_CD = 	null
+BILL_FORMAT = 		null
+envmt =		 		"dev"
+db = 				"fd3a"
+driver = 			getOracleVersion()
+uid = 				"pj7960"
+pwd =				"compass3"
+
+Set con=createobject("adodb.connection")
+Set rs=createobject("adodb.recordset")
+
+' --------------- validatePolicy ---------------
+' Author:			Charles Mehrer, 2012-07-25
+' Description:		Validates all bills for a specified policy number
+' Parameters:			<p>		Policy number	(CONT_NO)
+' Returns:			Nothing.
+function validatePolicy(p)
+   Set pol_con=createobject("adodb.connection")
+   Set pol_rs=createobject("adodb.recordset")
+   pol_con.Open "Driver=" & driver & ";Dbq=" & db & ";Uid=" & uid & ";Pwd=" & pwd & ";"
+   pol_rs.Open	"select * from scy104_bills where cont_no = '" & p & "' and	compassi_stat_cd = 'PU' and	rec_stat_cd = '01' order by bill_dt desc;", pol_con
+	while not pol_rs.EOF
+		validateBill pol_rs("ABLL_KEY")
+		pol_rs.MoveNext
+	wend
+	pol_rs.Close
+	pol_con.close
+end function
+
+' --------------- validateBill ---------------
+' Author:			Charles Mehrer, 2012-07-25
+' Description:		Validates all billing data for a specified bill
+' Parameters:			<abll_key>		Bill key	(ABLL_KEY)
+' Returns:			Nothing.
+function validateBill(abll_key)
+	viewBill 					abll_key
+	validateRemittance			abll_key
+	validatePolicySummary		abll_key
+	validateMemberAdjustments	abll_key
+	validateMemberDetails		abll_key
+	con.close
+end function
+
+' --------------- viewBill ---------------
+' Author:			Charles Mehrer, 2012-07-02
+' Description:		Navigates to an OA bill by policy number and bgrp_key
+' Parameters:			<pol_no>		Policy number	(CONT_NO)
+'						<bgrp>			Bill group key	(BGRP_KEY)
+' Returns:			Nothing.
+function viewBill(abll_key)
+	doLogin envmt, "testyBill", "password1"
+	con.Open "Driver=" & driver & ";Dbq=" & db & ";Uid=" & uid & ";Pwd=" & pwd & ";"
+	rs.open "select * from scy104_bills where abll_key = " & abll_key & ";", con
+	abll_key_global = abll_key
+	pol_no = rs("CONT_NO")
+	bgrp_key = rs("BGRP_KEY")
+	rs.close
+	rs.open "select * from table(select scb_web_bills.get_bill_summ_obj(" & abll_key & ") from dual);", con
+	while not(rs.EOF)
+		PYRL_TOT = rs("CUR_PYRL_TOT")
+		rs.moveNext
+	wend
+	rs.close
+	js "document.forms['policySelectionForm']['policySelectionForm:adminSyetemSelect'][0].click()"
+	wait 1, 500
+	js "document.getElementById('policySelectionForm:compassPolicyNumber').value='" & pol_no & "';"
+	js "document.getElementById('policySelectionForm:findBillGroupsButton').click()"
+	wait 1
+	js	"links = document.getElementById('policySelectionForm:policyTable').getElementsByTagName('a');" &_ 
+		"for(i=0;i<links.length;i++){" &_ 
+			"if(links[i].innerText.indexOf('" & bgrp_key & "') != -1){" &_
+				"links[i].click();}}"
+	wait 0, 500
+	js "document.getElementById('headerForm:menuBillingManageBillsItem:anchor').click()"
+	rs.open "select DBILL_FRMT_CD, BILL_FORMAT from SCY104_BILLS, EXTR_BILLS, TABLE(SELECT SCB_WEB_BILLS.GET_BILL_SUMM_OBJ(" & abll_key & ") FROM DUAL) SUMM where SCY104_BILLS.ABLL_KEY = '" & abll_key & "' and SCY104_BILLS.XBIL_KEY = EXTR_BILLS.XBIL_KEY"
+	DBILL_FRMT_CD = rs("DBILL_FRMT_CD")
+    BILL_FORMAT   = rs("BILL_FORMAT")
+    rs.close
+	waitLoad()
+	js	"rows = document.getElementById('mainform:manageBillsListTable').getElementsByTagName('tr');" &_
+		"for(i=1;i<rows.length;i++){" &_ 
+			"if (rows[i].getElementsByTagName('td')[rows[i].getElementsByTagName('td').length-1].innerText=='" & abll_key & "'){" &_ 
+				"rows[i].click();}}"
+	wait 1
+end function
+
+' --------------- validatePolicySummary ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Validates all policy summary info for specified bill
+' Parameters:			<abll_key>		Bill key	(ABLL_KEY)
+' Returns:			Nothing.
+function validatePolicySummary(abll_key)
+    wait 1, 500
+	jumpTo "mainform:policySummaryTabId_lbl"
+	wait 1, 500
+	js "document.getElementById('mainform:policySummaryTabId_lbl').click();"
+	wait 1, 500
+	if (DBILL_FRMT_CD = "E") then
+		polSummDefault(abll_key)
+	elseif ((DBILL_FRMT_CD = "4") or (BILL_FORMAT = "04")) then
+		rs.open "select * from table(select scb_web_bills.get_bill_summ_obj(" & abll_key & ") from dual);", con
+		rs.moveFirst
+		selectDetailed()
+		fixPolSummaryIDs()
+		While not (rs.EOF)
+			If rs("RECORD_TYPE") = "E" then rs.MoveNext
+			idPrefix = regExReplace(rs("GROUP_TITLE") & " " & rs("BEN_SHRT_NM"), "^\s+","")
+			validateBillElement		idPrefix & " Coverage Description",		rs("BEN_DESC") & " (" & rs("BEN_SHRT_NM") & ")",	"string"
+			validateBillElement		idPrefix & " Coverage Amount",			dbl("CVRD_AMT"),									"double"
+			validateBillElement		idPrefix & " Lives",					rs("CVRD_LVS"),										"string"
+			if not(PYRL_TOT = "0") then
+				validateBillElement	idPrefix & " Payroll Deduction",		dbl("CUR_PYRL_TOT"),								"double"
+			end if
+			validateBillElement		idPrefix & " Premium/Fees",				dbl("CUR_PREM_TOT"),								"double"
+			rs.MoveNext
+			if rs("RECORD_TYPE") = "G" then 'validate the department's totals
+				if not (isNull(rs("GROUP_TITLE"))) then
+					validateBillElement		rs("GROUP_TITLE") & " " & rs("GROUP_TITLE") & " Subtotal Coverage Amount",		rs("CVRD_AMT"),		"double"
+					if not(PYRL_TOT = "0") then
+						validateBillElement rs("GROUP_TITLE") & " " & rs("GROUP_TITLE") & " Subtotal Payroll Deduction",	rs("CUR_PYRL_TOT"), "double"
+					end if
+					validateBillElement		rs("GROUP_TITLE") & " " & rs("GROUP_TITLE") & " Subtotal Premium/Fees",			rs("CUR_PREM_TOT"),	"double"
+					validateBillElement		rs("GROUP_TITLE") & " " & rs("GROUP_TITLE") & " Total Coverage Amount",			rs("CUR_TOTAL"),	"double"
+				end if
+				rs.MoveNext
+			end if
+		wend
+	end if
+	rs.close
+	clearValidationHilighting()
+end function
+
+' --------------- polSummDefault ---------------
+' Author:			Charles Mehrer, 2012-07-12
+' Description:		Validates all policy summary info for bills with default formatting
+' Parameters:			<abll_key>		Bill key	(ABLL_KEY)
+' Returns:			Nothing.
+function polSummDefault(abll_key)
+	rs.open "select * from table(select scb_web_ol_bills.get_bill_summ_obj(" & abll_key & ") from dual);", con
+	rs.MoveNext 'skip past initial empty row
+	selectDetailed()
+	fixPolSummaryIDs()
+	while not isNull(rs("BEN_SHRT_NM"))
+		validateBillElement		rs("BEN_SHRT_NM") & " Coverage Description",	rs("BEN_DESC") & " (" & rs("BEN_SHRT_NM") & ")", 				"string"
+		validateBillElement		rs("BEN_SHRT_NM") & " Lives",					rs("CVRD_LVS"),													"double"
+		validateBillElement		rs("BEN_SHRT_NM") & " Employee",				rs("SUMM_EMPLEE_CONTRIB"),										"double"
+		validateBillElement		rs("BEN_SHRT_NM") & " Total",					dbl("SUMM_EMPLR_CONTRIB")+dbl("SUMM_EMPLEE_CONTRIB"),			"double"
+		rs.MoveNext
+	wend
+	selectSummarized()
+	fixPolSummaryIDs()
+	rs.MoveFirst
+	rs.MoveNext
+	rollup_name = rs("SUMM_ROLLUP_INDICATOR")
+	rs.moveFirst
+	rollup_total_ee = 0.00
+	rollup_total_em = 0.00
+	rollup_max_lvs = 0
+	while not (rs("RECORD_TYPE") = "G") 'isNull(rs("BEN_SHRT_NM"))
+		rs.moveNext
+		if rs("SUMM_ROLLUP_INDICATOR") = rollup_name then
+			rollup_total_ee = rollup_total_ee + dbl("SUMM_EMPLEE_CONTRIB")
+			rollup_total_em = rollup_total_em + dbl("SUMM_EMPLR_CONTRIB")
+			if (CInt(rs("CVRD_LVS")) > CInt(rollup_max_lvs)) then rollup_max_lvs = CInt(rs("CVRD_LVS")) end if
+		else
+			validateBillElement	rollup_name & " Coverage Description",			rollup_name,						"string"
+			validateBillElement	rollup_name & " Lives",							rollup_max_lvs,						"int"
+			validateBillElement	rollup_name & " Employee",						rollup_total_ee,					"double"
+			validateBillElement	rollup_name & " Total",							rollup_total_ee+rollup_total_em,	"double"
+			rollup_name 	=  rs("SUMM_ROLLUP_INDICATOR")
+			rollup_total_ee = dbl("SUMM_EMPLEE_CONTRIB")
+			rollup_total_em = dbl("SUMM_EMPLR_CONTRIB")
+			rollup_max_lvs 	= dbl("CVRD_LVS")
+		end if
+	wend
+end function
+
+
+function validateMemberAdjustments(abll_key)
+	rs.Open "select * from table(select scb_web_bills.get_bill_adj_obj(" & abll_key & ") from dual);"
+	js "document.getElementById('mainform:adjustmentsTabId_lbl').click();"
+	jsPatch()
+	fixMbrAdjustmentIDs()
+	jumpTo "mainform:adjustmentsTabId_lbl"
+	while not (rs.EOF)
+		if (rs("RECORD_TYPE") = "I") then
+			idPrefix = rs("MBR_NO") & " " & rs("BEN_SHRT_NM")
+			validateBillElement		rs("MBR_NO") & " Name",				rs("MBR_LASTNAME") & ", " & rs("MBR_FIRSTNAME"),	"string"
+			validateBillElement		idPrefix & " Benefit",				rs("BEN_SHRT_NM"),									"string"
+			validateBillElement		idPrefix & " Reason",				rs("ADJ_REAS1_L_DESC"),								"string"
+			validateBillElement		idPrefix & " Payroll Deduction",	rs("ADJ_PYRL_AMT"),									"double"
+			validateBillElement		idPrefix & " Premium/Fees",			rs("ADJ_PREM_AMT"),									"double"
+		elseif (rs("RECORD_TYPE") = "J1") then
+			validateBillElement		rs("MBR_NO") & " Adjusted Certificate Subtotals Payroll Deduction",	rs("ADJ_PYRL_TOT"),	"double"
+			validateBillElement		rs("MBR_NO") & " Adjusted Certificate Subtotals Premium/Fees",		rs("ADJ_PREM_TOT"),	"double"
+			validateBillElement		rs("MBR_NO") & " Total Adjusted Certificate Amount Premium/Fees",	rs("ADJ_TOTal"),	"double"
+		end if
+		rs.MoveNext
+	wend
+	rs.close
+	clearValidationHilighting()
+end function
+
+
+' --------------- validateMemberDetails ---------------
+' Author:			Charles Mehrer, 2012-07-09
+' Description:		Validates all member details for specified bill
+' Parameters:			<abll_key>		Bill key	(ABLL_KEY)
+' Returns:			Nothing.
+function validateMemberDetails(abll_key)
+	if (DBILL_FRMT_CD = "E") then
+		rs.open "select * from table(select scb_web_ol_bills.get_bill_mbr_obj(" & abll_key & ") from dual);", con
+	elseif ((DBILL_FRMT_CD = "4") or (BILL_FORMAT = "04")) then
+		rs.open "select * from table(select scb_web_bills.get_bill_mbr_obj(" & abll_key & ") from dual);", con
+	end if
+	while (rs("RECORD_TYPE") <> "N")
+		rs.MoveNext
+	wend
+	jsPatch()
+	js "document.getElementById('mainform:memberDetailsTabId_lbl').click();"
+	selectDetailed()
+	fixMbrDetlIDs()
+	jumpTo "mainform:memberDetailsTabId_lbl"
+	While not (rs.EOF or rs("RECORD_TYPE") = "P")
+		If (rs("RECORD_TYPE") = "M") then 
+			rs.MoveNext
+		end if
+		member_name = rs("MBR_LASTNAME") & ", " & rs("MBR_FIRSTNAME")
+		validateBillElement				rs("MBR_NO") & " Name",		rs("MBR_LASTNAME") & ", " & rs("MBR_FIRSTNAME"),	"string"
+		validateMemberDetailBenefits()
+		validateMemberDetailTotals()
+		rs.moveNext
+	wend
+	clearValidationHilighting()
+	if (DBILL_FRMT_CD = "E") then memberDetailSummarized() end if
+	rs.close
+end function
+
+' --------------- validateMemberDetailBenefits ---------------
+' Author:			Charles Mehrer, 2012-07-16
+' Description:		Validates all member details benefits one member
+' Parameters:		None.
+' Returns:			Nothing.
+function validateMemberDetailBenefits()
+	While not (rs.EOF or rs("RECORD_TYPE") = "O")
+        idPrefix = rs("MBR_NO") & " " & rs("BEN_SHRT_NM")
+		ageBandExpected = rs("AGE_RANGE_DESC")
+        If (DBILL_FRMT_CD = "E") then
+			If not isNull(rs("MBR_CVRG_ISSUE_AGE")) then ageBandExpected = rs("MBR_CVRG_ISSUE_AGE") end if
+			validateBillElement		idPrefix & " Benefit",				rs("BEN_SHRT_NM"),							"string"
+			validateBillElement		idPrefix & " Past Due Amount",		rs("PAST_DUE_AMT"),							"double"
+			validateBillElement		idPrefix & " Employee",				rs("EMPLEE_CONTRIB"),						"double"
+			validateBillElement		idPrefix & " Bill Amount Due",		dbl("EMPLEE_CONTRIB")+dbl("PAST_DUE_AMT"),	"double"
+		elseif ((DBILL_FRMT_CD = "4") or (BILL_FORMAT = "04")) then
+			validateBillElement		idPrefix & " Coverage Description",	rs("BEN_SHRT_NM"),							"string"
+			validateBillElement		idPrefix & " Coverage Amount",		rs("CURR_BEN_AMT"),							"double"
+			if not(PYRL_TOT = "0") then
+				validateBillElement	idPrefix & " Payroll Deduction",	rs("CUR_PYRL_AMT"),							"double"
+			end if
+			validateBillElement		idPrefix & " Premium/Fees",			rs("CUR_PREM_AMT"),							"double"
+		end if
+		validateBillElement			idPrefix & " Age Band",				ageBandExpected,							"string"
+		rs.moveNext
+	wend
+end function
+
+' --------------- validateMemberDetailTotals ---------------
+' Author:			Charles Mehrer, 2012-07-16
+' Description:		Validates one member's benefit totals
+' Parameters:		None.
+' Returns:			Nothing.
+function validateMemberDetailTotals()
+	if (DBILL_FRMT_CD = "E") then
+		validateBillElement			rs("MBR_NO") & " Total Past Due Amount",				rs("PAST_DUE_TOT"),						"double"				
+		validateBillElement			rs("MBR_NO") & " Total Employee",						rs("EMPLEE_TOT"),						"double"
+		validateBillElement			rs("MBR_NO") & " Total Bill Amount Due",				dbl("PAST_DUE_TOT")+dbl("EMPLEE_TOT"),	"double"
+	elseif ((DBILL_FRMT_CD = "4") or (BILL_FORMAT = "04")) then
+		if not(PYRL_TOT = "0") then
+			validateBillElement		rs("MBR_NO") & " Subtotal Current Payroll Deduction",	rs("CUR_PYRL_TOT"),						"double"				
+		end if
+		validateBillElement			rs("MBR_NO") & " Subtotal Current Premium/Fees",		rs("CUR_PREM_TOT"),						"double"
+		validateBillElement			rs("MBR_NO") & " Total Premium/Fees",					dbl("CUR_PYRL_TOT")+dbl("CUR_PREM_TOT"),"double"
+	end if
+end function
+
+' --------------- validateMemberDetailTotals ---------------
+' Author:			Charles Mehrer, 2012-07-16
+' Description:		Validates member details in summarized view.
+' Parameters:		None.
+' Returns:			Nothing.
+function memberDetailSummarized()
+	selectSummarized()
+	fixMbrDetlIDs()
+	rs.moveFirst
+	mbr_no 				= null
+	rollup_indicator 	= null
+	total_employee		= null
+	total_past_due		= null
+	while not (rs("RECORD_TYPE") = "P")
+		if(rs("ROLLUP_INDICATOR") = rollup_indicator) then
+			total_employee = total_employee + dbl("EMPLEE_CONTRIB")
+			total_past_due = total_past_due + dbl("PAST_DUE_AMT")
+		else
+			If isNull(mbr_no) and not isNull(rs("MBR_NO")) then
+				validateBillElement		rs("MBR_NO") & " Name",				rs("MBR_LASTNAME") & ", " & rs("MBR_FIRSTNAME"),	"string"
+			end if
+			If not isNull(rollup_indicator) then 
+				validateBillElement		mbr_no & " " & rollup_indicator & " Age Band",				ageBandExpected,						"string"
+				validateBillElement		mbr_no & " " & rollup_indicator & " Benefit",				rollup_indicator,						"string"
+				validateBillElement		mbr_no & " " & rollup_indicator & " Past Due Amount",		total_past_due,							"double"
+				validateBillElement		mbr_no & " " & rollup_indicator & " Employee",				total_employee,							"double"
+				validateBillElement		mbr_no & " " & rollup_indicator & " Bill Amount Due",		(total_employee + total_past_due),		"double"
+			end if
+			total_employee = dbl("EMPLEE_CONTRIB")
+			total_past_due = dbl("PAST_DUE_AMT")
+		end if
+		if rs("RECORD_TYPE") = "O" then
+            validateBillElement			mbr_no & " Total Past Due Amount",							rs("PAST_DUE_TOT"),						"double"
+			validateBillElement			mbr_no & " Total Employee",									rs("EMPLEE_TOT"),						"double"
+			validateBillElement			mbr_no & " Total Bill Amount Due",							dbl("PAST_DUE_TOT")+dbl("EMPLEE_TOT"),	"double"
+		end if
+		mbr_no 				= rs("MBR_NO")
+		rollup_indicator 	= rs("ROLLUP_INDICATOR")
+		ageBandExpected 	= rs("AGE_RANGE_DESC")
+		If not isNull(rs("MBR_CVRG_ISSUE_AGE")) then ageBandExpected = rs("MBR_CVRG_ISSUE_AGE") end if
+		rs.moveNext
+	wend
+	clearValidationHilighting()
+end function
+
+' --------------- validateRemittance ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Validates all remittance info for specified bill
+' Parameters:			<abll_key>		Bill key	(ABLL_KEY)
+' Returns:			Nothing.
+function validateRemittance(abll_key)
+	rs.open "select * from table(select scb_web_ol_bills.get_bill_rem_obj(" & abll_key & ") from dual);", con
+	validateRemString	"Policy Number",			"mainform:manageBillsSelectedPolicyNumberId",		"CONT_NO"
+	validateRemDate		"Due Date",					"mainform:manageBillsPolicyStmtDueDateId",			"STMT_DUE_DT"
+	validateRemDate		"Create Date",				"mainform:manageBillsCreateDateId",					"BILL_DT"
+	validateRemString	"Billing Period",			"mainform:manageBillsBillingPeriodId",				"BLLNG_PERD"
+	jumpTo 											"mainform:remittanceDetailsTabId_lbl"
+	validateRemAmount	"Prior Balance Due", 		"mainform:remitInfoPriorBalanceId",					"PRIOR_BAL_DUE_TOT"
+	validateRemAmount	"Current Premium/Fees",		"mainform:remitInfoCurrentPremiumId",				"CUR_PREM_TOT"
+	validateRemAmount	"Member Adjustments",		"mainform:remitInfoMemberAdjustmentsId",			"MBR_ADJ_TOT"
+	validateRemAmount	"Payment Received",			"mainform:remitInfoPaymentReceivedId",				"PYMT_REC_TOT"
+	validateRemAmount	"Total Amount Due",			"mainform:remitInfoTotalAmountDueId",				"AMT_DUE_TOT"
+	validateRemString	"Business Phone",			"mainform:remitInfoCompanyPhone",					"BSVC_BUS_PHONE_NO"
+	validateRemString	"Business Fax",				"mainform:remitInfoCompanyFax",						"BSVC_BUS_FAX_NO"
+	validateRemString	"Company Name",				"mainform:remitInfoCompanyBankName",				"CO_DISPLAY_NM"
+	validateRemString	"Address Street",			"mainform:remitInfoCoAddrLine1",					"CO_ADDR_LINE1"
+	validateRemString	"Address City",				"mainform:remitInfoCoAddrCity",						"CO_CITY"
+	validateRemString	"Address State",			"mainform:remitInfoCoAddrState",					"CO_STATE"
+	validateRemString	"Address Zip",				"mainform:remitInfoCoAddrZip",						"CO_POSTCD"
+	jumpTo 											"mainform:remitInfoCompanyBankName"
+	validateRemString	"Policy Number",			"mainform:remitStubSelectedPolicyNumberId",			"CONT_NO"
+	validateRemString	"Policyholder Name",		"mainform:remitStubPolicyholderNameId",				"PAYR_ORGNAME"
+	validateRemString	"Company Name",				"mainform:remitStubCompanyBankNameId",				"CO_NM"
+	validateRemString	"Address 1",				"mainform:remitStubBankAddrLine1",					"BSVC_BUS_ADDR1"
+	validateRemString	"Address City",				"mainform:remitStubBankAddrCityId",					"BSVC_BUS_CITY"
+	validateRemString	"Address ST",				"mainform:remitStubBankAddrStateId",				"BSVC_BUS_STATE"
+	validateRemString	"Address Zip",				"mainform:remitStubBankAddrZipId",					"BSVC_BUS_POSTCD"
+	validateRemAmount	"Amount Due",				"mainform:remitStubTotalAmountDueId",				"AMT_DUE_TOT"
+	validateRemDate		"Due Date",					"mainform:remitStubStmtDueDateId",					"STMT_DUE_DT"
+	validateRemString	"Pol. No.",					"mainform:remitStubContractNumberId",				"CONT_NO"
+	validateRemString	"Cat. No.",					"mainform:remitStubCategoryNumberId",				"CAT_NO"
+	validateRemString	"BGRR key",					"mainform:remitStubRefNumberId",					"BGRR_KEY"
+	clearValidationHilighting()
+	rs.close
+end function
+
+' --------------- validateBillElement ---------------
+' Author:			Charles Mehrer, 2012-07-12
+' Description:		Wrapper for validateElement, specific to OA Bills
+' Parameters:           <html_id>			HTML id of the element being validated
+'						<expectedValue>		Expected correct value of on-screen element.
+'						<typ>				String containing the data type of the expected value. Either "string","double", or "date"
+' Returns:			Nothing
+function validateBillElement(html_id, expectedValue, typ)
+	validateElement	pol_no & "/" & abll_key_global & ": " & html_id, html_id, expectedValue, typ
+end function
+
+' --------------- dbl ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Returns a double value for a specified colunm in recordset "rs"
+' Parameters:			<str>		Column name in the recordset of the value you want converted to a double.
+' Returns:			Double value of column in recordset, 0 if null.
+function dbl(str)
+	if isNull(rs(str).value) then
+		dbl = 0
+	else
+		dbl = CDbl(rs(str))
+	end if
+end function
+
+
+' --------------- fixPolSummaryIDs ---------------
+' Author:			Charles Mehrer, 2012-07-11
+' Description:		Applies meaningful IDs to items in the policy summary table.
+function fixPolSummaryIDs()
+	js	"var divs = document.getElementById('mainform:policySummaryTabId').childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes;" &_
+		"for(i=0;i<divs.length;i++){" &_ 
+			"if(divs[i].style.display!='none'){" &_ 
+				"displayedDiv=divs[i];}}" &_ 
+		"var departmentName='';" &_
+		"coverages = displayedDiv.getElementsByTagName('table')[0].getElementsByTagName('tr');" &_
+		"headers = coverages[0].getElementsByTagName('th');" &_
+		"for(i=2;i<coverages.length-2;i++){" &_
+			"var cols = coverages[i].getElementsByTagName('td').length;" &_
+			"if(cols > 0){" &_
+				"if((cols == 1)&&(coverages[i].innerText!='')){" &_
+					"departmentName = coverages[i].getElementsByTagName('td')[0].innerText+' ';}" &_
+				"cells = coverages[i].getElementsByTagName('td');" &_
+				"covrName = coverages[i].getElementsByTagName('td')[0].innerText.replace(/^[^\(]*\(|\)/g,'').replace(/^[\s]+/g,'');" &_
+				"coverages[i].setAttribute('id','COVERAGE '+covrName);" &_
+				"for(j=0;j<cells.length;j++){" &_
+					"cells[j].setAttribute('id',(departmentName+covrName+' '+headers[j].innerText).replace(/^[\s]+/g,''));" &_
+		"}}}"
+end function
+
+' --------------- fixMbrDetlIDs ---------------
+' Author:			Charles Mehrer, 2012-07-11
+' Description:		Applies meaningful IDs to items in the member detail table.
+function fixMbrDetlIDs()
+	'for the love of god, don't change anything here unless you absolutely know what you're doing.
+    js	"divs = document.getElementById('mainform:memberDetailsTabId').childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes;" &_
+		"for(i=0;i<divs.length;i++){" &_
+			"if(divs[i].style.display!='none'){" &_
+				"displayedDiv=divs[i];}}" &_
+		"var memberNo='';" &_
+		"var tableIndex=0;" &_
+		"members = displayedDiv.getElementsByTagName('table')[0].getElementsByTagName('tbody')[0].childNodes;" &_
+		"headers = displayedDiv.getElementsByTagName('thead')[0].getElementsByTagName('th');" &_
+		"for(i=2;i<members.length-2;i++){" &_
+			"var cols = members[i].childNodes.length;" &_
+			"if((cols == headers.length) && (members[i].innerText != '')){" &_
+				"tables=members[i].childNodes[2].getElementsByTagName('table');" &_
+				"for(m=0;m<tables.length;m++){" &_
+					"if(tables[m].style.display!='none'){" &_
+					"tableIndex = m;}}" &_
+				"memberNo = members[i].getElementsByClassName('dr-subtable-cell')[0].innerText.split(/[\s]+/)[0];" &_
+				"benefits = members[i].childNodes[2].getElementsByTagName('table')[tableIndex].getElementsByTagName('tr');" &_
+				"members[i].getElementsByClassName('dr-subtable-cell')[0].getElementsByTagName('a')[0].setAttribute('id',memberNo+' Name');" &_
+				"for(j=0;j<benefits.length;j++){" &_
+					"covrName = benefits[j].innerText;" &_
+					"for(k=1;k<members[i].childNodes.length;k++){" &_
+						"members[i].childNodes[k].getElementsByTagName('table')[tableIndex].getElementsByTagName('tr')[j].setAttribute('id',memberNo+' '+benefits[j].innerText+' '+headers[k].innerText);" &_
+			"}}}" &_
+			"if(members[i].childNodes.length > 0){" &_
+				"label=members[i].childNodes[0].innerText;" &_
+				"if((label == 'Total')||(label == 'Subtotal Current')){" &_
+					"colspan = parseInt(members[i].childNodes[0].getAttribute('colspan'));" &_
+					"for(l=1;l<=headers.length-colspan;l++){" &_
+						"members[i].childNodes[l].setAttribute('id',memberNo+' '+label+' '+headers[colspan+l-1].innerText);" &_
+		"}}}}"
+end function
+
+function fixMbrAdjustmentIDs()
+	'for the love of god, don't change anything here unless you absolutely know what you're doing.
+    js  "var memberNo='';" &_
+		"var tableIndex=0;" &_
+		"var displayedDiv = displayedDiv = document.getElementById('worksiteMemberAdjustmentsDivId');" &_
+		"members = displayedDiv.getElementsByTagName('table')[0].getElementsByTagName('tbody')[0].childNodes;" &_
+		"headers = displayedDiv.getElementsByTagName('thead')[0].getElementsByTagName('th');" &_
+		"for(i=2;i<members.length-2;i++){" &_
+			"var cols = members[i].childNodes.length;" &_
+			"if((cols == headers.length) && (members[i].innerText != '')){" &_
+				"tables=members[i].childNodes[2].getElementsByTagName('table');" &_
+				"for(m=0;m<tables.length;m++){" &_
+					"if(tables[m].style.display!='none'){" &_
+					"tableIndex = m;}}" &_
+				"memberNo = members[i].getElementsByClassName('dr-subtable-cell')[0].innerText.split(/[\s]+/)[0];" &_
+				"benefits = members[i].childNodes[1].getElementsByTagName('table')[tableIndex].getElementsByTagName('tr');" &_
+				"members[i].getElementsByClassName('dr-subtable-cell')[0].getElementsByTagName('a')[0].setAttribute('id',memberNo+' Name');" &_
+				"for(j=0;j<benefits.length;j++){" &_
+					"covrName = benefits[j].innerText;" &_
+					"for(k=1;k<members[i].childNodes.length;k++){" &_
+						"members[i].childNodes[k].getElementsByTagName('table')[tableIndex].getElementsByTagName('tr')[j].setAttribute('id',memberNo+' '+benefits[j].innerText+' '+headers[k].innerText);" &_
+			"}}}" &_
+			"if(members[i].childNodes.length > 0){" &_
+				"label=members[i].childNodes[0].innerText;" &_
+				"if((label.indexOf('Total') == 0)||(label.indexOf('Subtotal') >= 0)){" &_
+					"colspan = parseInt(members[i].childNodes[0].getAttribute('colspan'));" &_
+					"for(l=1;l<=headers.length-colspan;l++){" &_
+						"members[i].childNodes[l].setAttribute('id',memberNo+' '+label+' '+headers[colspan+l-1].innerText);" &_
+		"}}}}"
+end function
+
+' --------------- selectDetailed ---------------
+' Author:			Charles Mehrer, 2012-07-10
+' Description:		Clicks the radio button for tier-level benefit details
+function selectDetailed()
+	'js "document.getElementById('mainform:printedBillVersion').getElementsByTagName('input')[0].click();"
+	js "document.getElementById('mainform:printedBillVersion').getElementsByTagName('input')[0].click();"
+	waitLoad()
+end function
+
+' --------------- selectSummarized ---------------
+' Author:			Charles Mehrer, 2012-07-10
+' Description:		Clicks the radio button for summarized benefit details
+function selectSummarized()
+	js "document.getElementById('mainform:printedBillVersion').getElementsByTagName('input')[1].click();"
+	waitLoad()
+end function
+
+' --------------- WaitLoad ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Waits for loading popup to go away
+' Parameters:		None.
+' Returns:			Nothing.
+function waitLoad()
+	wait 1
+	js "function waitLoad(){" &_
+			"if(document.getElementById('popup').style.display != 'none'){" &_
+				"window.setTimeout(waitLoad,200);}" &_
+			"else{" &_
+				"alert('Done loading.');" &_
+		"}}" &_
+		"waitLoad();"
+	getMsgText()
+end function
+
+' --------------- validateRemString ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Wrapper function for validateElement, validates an on-screen string element on the bill remittance page.
+function validateRemString(label, html_id, col)
+	validateElement pol_no & "/" & abll_key_global & ": " & label, html_id, rs(col), "string"
+end function
+
+' --------------- validateRemAmount ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Wrapper function for validateElement, validates an on-screen number on the bill remittance page.
+function validateRemAmount(label, html_id, col)
+	validateElement pol_no & "/" & abll_key_global & ": " & label, html_id, rs(col), "double"
+end function
+
+' --------------- validateRemDate ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Wrapper function for validateElement, validates an on-screen date on the bill remittance page.
+function validateRemDate(label, html_id, col)
+	validateElement pol_no & "/" & abll_key_global & ": " & label, html_id, rs(col), "date"
+end function
+

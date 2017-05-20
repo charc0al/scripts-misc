@@ -1,0 +1,350 @@
+
+Calc: 04/26/2012 16:36:18                CIB Plan Summary             Print: 05/07/2012 10:30:57
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:         0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: CIB               Base Plan Seq:  2
+Sub Plan:       CIB               Plan Indicator: N/A
+Grp Office:     60                Series:         CIB
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 60/10 - Created by conversion
+
+Critical Illness:
+Level:                               Plan 1 (excludes Cancer)
+Wellness:                            $50
+Recurrence Benefit:                  Categories 1&2 only
+Recurrence Timeframe:                18 months
+Additional Occurrence:               6 month
+Unit of Rounding for Age Reductions: $ 1,000
+Rounding Type:                       next higher
+Reduction:                           50% at 70
+                                     Employee                     Spouse       Child
+Unit Amount:                         $ 5,000                      $ 2,500      $2,500
+Minimum Benefit Amount:              $  5,000                     $ 2,500      $2,500
+Maximum Benefit Amount:              $ 50,000                     $25,000      $5,000
+Percent of Employee's Benefit:                                    50%          50%
+Minimum Participation for GI:        20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 16:36:18               CIB Factors           Print: 05/07/2012 10:30:57
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: CIB               Base Plan Seq:  2
+Sub Plan:       CIB               Plan Indicator: N/A
+Grp Office:     60                Series:         Critical Illness
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 60/10 - Created by conversion
+
+
+Base Rates:                     Employee       Spouse        Child
+  Non Tobacco
+    18-29                         0.2200       0.2100       0.0600
+    30-39                         0.4600       0.4400       0.0600
+    40-49                         0.8000       0.7600       0.0600
+    50-59                         1.6300       1.5500       0.0600
+    60-64                         2.4400       2.3200       0.0600
+    65-99                         3.0000       2.8500       0.0600
+  Tobacco
+    18-29                         0.3800       0.3600       0.0600
+    30-39                         0.8400       0.8000       0.0600
+    40-49                         1.4700       1.4100       0.0600
+    50-59                         3.1000       2.9800       0.0600
+    60-64                         4.2900       4.1200       0.0600
+    65-99                         4.7000       4.5200       0.0600
+
+Recurrence:                       1.1600       1.1600       1.0000
+Wellness (+):                     0.2700       0.3500       0.0000
+State Additive Adjustment (+):    0.0000       0.0000       0.0000
+
+Commissions/Fees:                 1.0000       1.0000       1.0000
+Transfer:                         1.0000       1.0000       1.0000
+Rate Guarantee:                   1.0000       1.0000       1.0000
+State Multiplicative Factor:      1.0000       1.0000       1.0000
+Modal Factor:                     1.0000       1.0000       1.0000
+
+Final Modal Rates:
+  Non Tobacco
+    18-29                         0.5300       0.5900       0.0600
+    30-39                         0.8000       0.8600       0.0600
+    40-49                         1.2000       1.2300       0.0600
+    50-59                         2.1600       2.1500       0.0600
+    60-64                         3.1000       3.0400       0.0600
+    65-99                         3.7500       3.6600       0.0600
+  Tobacco
+    18-29                         0.7100       0.7700       0.0600
+    30-39                         1.2400       1.2800       0.0600
+    40-49                         1.9800       1.9900       0.0600
+    50-59                         3.8700       3.8100       0.0600
+    60-64                         5.2500       5.1300       0.0600
+    65-99                         5.7200       5.5900       0.0600
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 16:36:18               CIB Census           Print: 05/07/2012 10:30:57
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: CIB               Base Plan Seq:  2
+Sub Plan:       CIB               Plan Indicator: N/A
+Grp Office:     60                Series:
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 60/10 - Created by conversion
+
+Census:           Eligible EE's
+
+               Total        Total     EES with     EES with     EES with     EES with
+            Male EES   Female EES      EE Only      Sp Only      Ch Only      Sp & Ch
+00 - 29          167            0          167            0            0            0
+30 - 39            0            0            0            0            0            0
+40 - 49            0            0            0            0            0            0
+50 - 59            0            0            0            0            0            0
+60 - 64            0            0            0            0            0            0
+65 +               0            0            0            0            0            0
+
+Total:           167            0          167            0            0            0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 16:36:18               CIB Step Rates           Print: 05/07/2012 10:30:57
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: CIB               Base Plan Seq:  2
+Sub Plan:       CIB               Plan Indicator: N/A
+Grp Office:     60                Series:         Critical Illness
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 60/10 - Created by conversion
+
+
+
+                            Employee        Spouse         Child
+Non Tobacco Rates
+18-29                           0.53          0.59          0.06
+30-39                           0.80          0.86          0.06
+40-49                           1.20          1.23          0.06
+50-59                           2.16          2.15          0.06
+60-64                           3.10          3.04          0.06
+65+                             3.75          3.66          0.06
+
+Tobacco Rates
+18-29                           0.71          0.77          0.06
+30-39                           1.24          1.28          0.06
+40-49                           1.98          1.99          0.06
+50-59                           3.87          3.81          0.06
+60-64                           5.25          5.13          0.06
+65+                             5.72          5.59          0.06
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 16:36:18               CIB GI                     Print: 05/07/2012 10:30:57
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: CIB               Base Plan Seq:  2
+Sub Plan:       CIB               Plan Indicator: N/A
+Grp Office:     60                Series:         Critical Illness
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 60/10 - Created by conversion
+
+GI:             Calc New
+
+
+                Employee          Spouse          Child
+
+Issue:          $0                $0              $0
+Future:         $0                $0              $0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+

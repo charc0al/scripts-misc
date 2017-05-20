@@ -1,0 +1,567 @@
+' ----------------------------------- CDR Function Library -----------------------------------
+' Library of general CDR functions
+' Author : Charlie Mehrer
+
+Set con=createobject("adodb.connection")
+Set global_rs = createObject("adodb.recordset")
+global_pol_no = null
+global_bntp_key = null
+global_tab_selected = ""
+'con.Open "Driver=Oracle in OraHome92;Dbq=fd3a;Uid=pj7960;Pwd=compass1;"
+con.Open "Driver=Oracle in OraHome92;Dbq=fm3a;Uid=ro_pj7960;Pwd=assurant1;"
+con.CommandTimeout = 0
+
+'======================================================================================================================================
+'============================== BROWSER CONTROL STUFF =================================================================================
+'======================================================================================================================================
+
+' --------------- viewCDR ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Navigates to CDR, searches for specified policy #, and waits for load to complete
+' Parameters:			<policyNo>			COMPASS policy # for CDR 
+' Returns:			Nothing
+function viewCDR(policyNo)
+	global_pol_no = policyNo
+	'theBrowser.Navigate "http://msp0lwasd014.etdbw.com:9084/CompassDataRecord/"
+	theBrowser.Navigate "http://www.assurantemployeebenefits.com" 'navigate away from page first, due to odd errors occurring when trying to navigate to CDR when already viewing a policy
+	theBrowser.Navigate "http://msp0lwasm016.etdbw.com:9084/CompassDataRecord/"
+	jsPatch()
+	js "document.getElementsByClassName('gwt-TextBox')[0].value='" & policyNo & "';"
+	clickBtn "Search"
+	wait 1
+	js "header = document.getElementsByClassName('policyTableHeader');tableDiv = header[0].parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.nextSibling.nextSibling;rows = tableDiv.getElementsByTagName('tr');for(var i=0;i<rows.length;i++){rows[i].getElementsByTagName('td')[0].setAttribute('id','policy_'+rows[i].getElementsByTagName('td')[0].innerText.replace(/\s/,''));}"
+	mouseEvent "policy_" & policyNo, "onclick"
+	waitLoad()
+	global_tab_selected = "Policy" 'keep track of currently selected tab in global_tab_selected
+end function
+
+' --------------- clickTab ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Clicks on a coverage tab in CDR (if it is not already selected)
+' Parameters:			<coverageName>		The text on the tab, exactly as it appears.
+' Returns:			Nothing.
+function clickTab(coverageName)
+	clearValidationHilighting()
+	if (global_tab_selected <> coverageName) then 'only click tab if not already selected, reduces waiting time.
+		js "var labels = document.getElementsByClassName('gwt-TabBar')[0].getElementsByClassName('gwt-Label');for(i=0;i<labels.length;i++){labels[i].setAttribute('id','Tab_'+labels[i].innerText);}"
+		js "document.getElementById('Tab_" & coverageName & "').click()"
+	end if
+	global_tab_selected = coverageName 'keep track of currently selected tab in global_tab_selected
+end function
+
+' --------------- selectBenefit ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Selects a benefit from the listbox of benefits under a coverage.
+' Parameters:			<pol_no>			Policy number
+'						<eff_dt>			Effective date in DD-MMM-YYYY format
+'						<index>				Position of benefit in listbox. (starts with 0)
+' Returns:			Nothing.
+function selectBenefit(pol_no, eff_dt, index)
+	clearValidationHilighting()
+	js "panel = document.getElementsByClassName('gwt-TabPanelBottom')[0];for(i=0;i<panel.children.length;i++){if(panel.children[i].style.display != 'none'){currentPane = panel.children[i];break;}}"
+    js "benList = currentPane.getElementsByClassName('gwt-ListBox')[0];benList.setAttribute('id', '" & global_tab_selected & "_benList');for(i=0;i<benList.children.length;i++){benList.children[i].setAttribute('id','" & global_tab_selected & "_ben'+i);if(i == " & index & "){benList.value = benList.children[i].value;alert(benList.children[i].value);}}benList.fireEvent('onchange');"
+	global_bntp_key = getMsgText()
+end function
+
+' --------------- fixHtmlIDs ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Applies some of the missing HTML IDs to worksite tabs in CDR so the elements on the page can be validated
+' Parameters:			<coverageName>			Name format for coverage in HTML IDs
+' Returns:			Nothing.
+function fixHtmlIDs(coverageName)
+	js "panel = document.getElementsByClassName('gwt-TabPanelBottom')[0];for(i=0;i<panel.children.length;i++){if(panel.children[i].style.display != 'none'){currentPane = panel.children[i];break;}};theTable = currentPane.getElementsByTagName('table')[0];labels = theTable.getElementsByClassName('gwt-Label');"
+	js "function camelCase(str){camelStr = str.replace(/([\s\-\\\/]+[a-zA-Z])/g, function($1){return $1.toUpperCase().replace(/[\s\\\-\/]/,'')});return camelStr.replace(/^[A-Z]/, function($1){return $1.toLowerCase();});} for(i=0;i<labels.length;i++){if((!labels[i].getAttribute('id')) && (labels[i].style.fontWeight=='bold')){labels[i].setAttribute('id','TITLE_" & coverageName & "_'+camelCase(labels[i].innerText).replace(':',''));labels[i+1].setAttribute('id','VALUE_" & coverageName & "_'+camelCase(labels[i].innerText).replace(':',''));}}"
+	js "document.getElementsByAttribute('id','VALUE_" & coverageName & "_mode')[1].setAttribute('id','VALUE_" & coverageName & "_mode1');document.getElementsByAttribute('id','TITLE_" & coverageName & "_mode')[1].setAttribute('id','TITLE_" & coverageName & "_mode1');"
+	js "document.getElementsByAttribute('id','VALUE_" & coverageName & "_mode')[0].setAttribute('id','VALUE_" & coverageName & "_mode0');document.getElementsByAttribute('id','TITLE_" & coverageName & "_mode')[0].setAttribute('id','TITLE_" & coverageName & "_mode0');"
+end function
+
+' --------------- waitLoad ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Waits for the CDR to finish loading (by waiting until the loading .gif goes away)
+' Parameters:		None.
+' Returns:			Nothing.
+function waitLoad()
+	js "function waitLoad(){if((document.getElementsByAttribute('src','images/loading.gif').length == 0) || (document.getElementsByAttribute('src','images/loading.gif')[0].style.display != 'none')){window.setTimeout(waitLoad,200);}else{alert('Done loading.');}} waitLoad();"
+	getMsgText()
+end function
+
+'======================================================================================================================================
+'============================== GET COVERAGE INFO =====================================================================================
+'======================================================================================================================================
+
+' --------------- getCoverage ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Opens a query for all benefit information for a coverage.
+' Parameters:			<policy_no>		COMPASS policy #
+'						<req_date>		Request date in DD-MMM-YYYY format
+'						<coverage>		String containing name of .sql file for coverage (found in T:\Test Services\Worksite CDR\queries)
+'						<bntp_key>		BNTP_KEY for the benefit you want to get coverage info for.
+' Returns:			Recordset containing benefit info.
+function getCoverage(policy_no, req_date, coverage, bntp_key)
+	Set objFSO = createObject("Scripting.FileSystemObject")
+	Set objReadFile = objFSO.openTextFile("T:\Test Services\Worksite CDR\queries\" & coverage & ".sql",1,false) 'open stored .sql query for coverage
+	query = objReadFile.ReadAll
+	objReadFile.close
+	Set covr_rs=createobject("adodb.recordset")
+	query = replace(query, "N_RQST_DT_IN", "'" & req_date & "'") 'fill in request date placeholder with parameterized value
+	query = replace(query, "N_POLICY_NO_IN", policy_no) 'same for policy number
+	query = replace(query, "N_BNTP_KEY_IN", bntp_key) 'and for bntp_key
+	covr_rs.open query, con
+	set getCoverage = covr_rs
+end function
+
+' --------------- getPolicy ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Opens a query for all policy tab information for a policy.
+' Parameters:			<policy_no>		COMPASS policy #
+' Returns:			Recordset containing all policy tab info.
+function getPolicy(policy_no)
+	Set pol_rs=createobject("adodb.recordset")
+	Set tempRs=createobject("adodb.recordset")
+	tempRs.open "select * from case_data where cont_no = '" & policy_no & "';", con 'get case_key first
+	case_key = tempRs("CASE_KEY") 'store case_key before closing recordset
+	tempRs.Close
+	pol_rs.open "select * from SCY901_BEN_POL, SCY909_BEN_CASD where scy901_ben_pol.case_key = " & case_key & " and scy909_ben_casd.case_key = " & case_key & ";", con
+	set getPolicy = pol_rs
+end function
+
+' --------------- getNumBenefits ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Simply gets the number of benefits available under the coverage that is selected.
+' Parameters:		None.
+' Returns:			Integer - number of benefits in the listbox.
+function getNumBenefits()
+	js "panel = document.getElementsByClassName('gwt-TabPanelBottom')[0];for(i=0;i<panel.children.length;i++){if(panel.children[i].style.display != 'none'){currentPane = panel.children[i];break;}}"
+    js "benList = currentPane.getElementsByClassName('gwt-ListBox')[0];benList.setAttribute('id', '" & global_tab_selected & "_benList');"
+	Environment("nm_id") = global_tab_selected & "_benList"
+	getNumBenefits = Browser("theBrowser").Page("thePage").WebElement("list").GetROProperty("items count")
+end function
+
+'======================================================================================================================================
+'============================== VALIDATION ============================================================================================
+'======================================================================================================================================
+
+' --------------- validateCoverage ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Generic function that validates all benefits under a particular coverage.
+' Parameters:			<pol_no>		COMPASS policy #
+'						<eff_dt>		Effective date, formatted in DD-MMM-YYYY
+'						<tab_nm>		Tab name for coverage
+'						<html_id_pref>	Coverage name as formatted in HTML IDs.
+' Returns:			Nothing.
+function validateCoverage(pol_no, eff_dt, tab_nm, html_id_pref)
+	clickTab tab_nm 'click on tab of coverage being validated
+	numBenefits = getNumBenefits() 'get number of benefits in listbox
+	fixHtmlIDs html_id_pref	'fix HTML ids so validateField will work on all fields
+	benCount = 0
+	while(benCount < numBenefits) 'loop through every benefit
+		do while true 'had to use a "do while true/exit do" trick, to simulate "continue" functionality not supported by VBS, in case a benefit doesn't load properly so the test can continue.
+			selectBenefit pol_no, eff_dt, benCount 'select the benefit for the current loop iteration
+			benCount = benCount + 1 'increment benCount
+			set global_rs = getCoverage(pol_no, eff_dt, tab_nm, global_bntp_key) 'grab the recordset for the coverage being validated
+			if (global_rs.EOF) then 'check if the recordset contains anything. If not, move on to the next coverage.
+				writeResults micFail, global_pol_no & ": " & tab_nm & "- Select Benefit #" & benCount,"No rows returned for benefit #" & benCount & ", bntp_key = " & global_bntp_key
+				exit do 'continue on to the next benefit
+			end if
+			waitLoad() 
+			validateCovrTab tab_nm 'call validateCovrTab, wrapper to call function to validate all fields under the coverage tab
+			exit do 'always exit do because it's in a while-true loop
+		loop
+	wend
+end function
+
+' --------------- validateField ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Generic function that validates an HTML element against a column in the global_rs recordset
+' Parameters:			<nm>		Label string in front of element to validate
+'						<col>		Name of column in recordset for corresponding value.
+'						<tabName>	Coverage name, formatted as in the HTML IDs under that coverage tab.
+' Returns:			Nothing.
+function validateField(nm, col, tabName)
+	Dim nm_id : nm_id = camelCase(nm)
+	Environment("nm_id") = "VALUE_" & tabName & "_" & nm_id 'set environment variable to html id for faster identification through object repository. Still a mystery to me why this is faster.
+	fieldValue = Browser("theBrowser").Page("thePage").WebElement("nm").GetROProperty("innertext") 'get field value from element with HTML ID in nm_id
+	expectedValue = ""
+	if(global_rs(col) <> "") then expectedValue = Cstr(global_rs(col)) 'convert expectedValue to string, if column in recordset isn't null
+	if(inStr(LCase(nm), "date")) then
+		If regExMatch(fieldValue, "[0-9]+[\/\-][0-9]+") then fieldValue = CStr(CDate(regExReplace(fieldValue, "\s.*",""))) 'if it's formatted like a date, cast as date.
+		if regExMatch(expectedValue, "[0-9]+\/[0-9]+") then expectedValue = CStr(CDate(expectedValue)) 'cast as date if it is formatted as date
+	end if
+	js "document.getElementById('TITLE_" & tabName & "_" & nm_id & "').parentNode.style.background='#00ff00';" 'highlight title cell green, just to indicate it has been identified
+	js "document.getElementById('TITLE_" & tabName & "_" & nm_id & "').parentNode.setAttribute('validated','1');" 'set attribute for validation so it can be undone
+	hilightColor = "FF0000" 'red, by default. Only changes to green upon positive validation.
+	if(expectedValue = fieldValue) then 'if the on-screen value matches expected, then log a pass result and change hilightColor to green
+		writeResults micPass, global_pol_no & ": " & tabName & " - " & global_rs(5) & " - " & nm, "On-screen and expected values match, " & quoted(expectedValue)
+		hilightColor = "00FF00" 'green
+	else 'otherwise, log a fail.
+		writeResults micFail, global_pol_no & ": " & tabName & " - " & global_rs(5) & " - " & nm, "On screen:" & VBTAB & quoted(fieldValue) & VBCR & "Expected: " & VBTAB & quoted(expectedValue)
+	end if
+	js "document.getElementById('VALUE_" & tabName & "_" & nm_id & "').parentNode.style.background='#" & hilightColor & "';" 'hilight validated cell with appropriate color
+	js "document.getElementById('VALUE_" & tabName & "_" & nm_id & "').parentNode.setAttribute('validated','1');" 'mark element as validated
+	js "document.getElementById('VALUE_" & tabName & "_" & nm_id & "').parentNode.setAttribute('onclick','alert(" & quoted("Expected: " & expectedValue) & ")');" 'set onClick event to show expected value, useful for failed validation where cell on screen is empty.
+end function
+
+' --------------- validateEOI ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates the EOI field under the Cancer tab. Had to create a separate function because the expected value here does not appear directly in the recordset.
+' Parameters:		None.
+' Returns:			Nothing.
+function validateEOI()
+	If (global_rs("OVRD_FC_AMT") = "-1") and (global_rs("OVRD_FC_REAS_CD") = "01") then 'EOI = "Yes", if OVRD_FC_AMT = -1 and OVRD_FC_REAS_CD = 01, otherwise "No"
+		expectedValue = "Yes"
+	else
+		expectedValue = "No"
+	end if
+	Environment("nm_id") = "VALUE_Cancer_eoi"
+	fieldValue = Browser("theBrowser").Page("thePage").WebElement("nm").GetROProperty("innertext") 'get text in EOI field
+	js "document.getElementById('TITLE_Cancer_eoi').parentNode.style.background='#00ff00';" 'highlight title
+	js "document.getElementById('TITLE_Cancer_eoi').parentNode.setAttribute('validated','1');" 'mark for validation
+	hilightColor = "FF0000"
+	if(expectedValue = fieldValue) then
+		writeResults micPass, global_pol_no & ": Cancer - " & global_rs(5) & " - EOI", "On-screen and expected values match, " & quoted(expectedValue)
+		hilightColor = "00FF00"
+	else
+		js "document.getElementById('VALUE_Cancer_eoi').parentNode.setAttribute('onclick','alert(" & quoted("Expected: " & expectedValue) & ")');" 'set onClick event to show expected value, useful for failed validation where cell on screen is empty.
+		writeResults micFail, global_pol_no & ": Cancer - " & global_rs(5) & " - EOI", "On screen:" & VBTAB & quoted(fieldValue) & VBCR & "Expected: " & VBTAB & quoted(expectedValue)
+	end if
+	js "document.getElementById('VALUE_Cancer_eoi').parentNode.style.background='#" & hilightColor & "';"
+	js "document.getElementById('VALUE_Cancer_eoi').parentNode.setAttribute('validated','1');"
+end function
+
+'======================================================================================================================================
+'============================== GENERIC SECTION VALIDATION ============================================================================
+'======================================================================================================================================
+
+' --------------- validateSection1 ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields in the first section of WS tabs.
+' Parameters:			<abbr>		3-character abbreviation for coverage
+'						<covr>		Effective date, formatted in DD-MMM-YYYY
+' Returns:			Nothing.
+function validateSection1(abbr, covr)
+	validateField 		"Benefit Effective Date", 					"BNTP_EFF_DT_"			& abbr, covr
+	validateField 		"Coverage Original Effective Date", 		"COVG_ORIG_EFF_DATE_"	& abbr, covr
+	validateField 		"Contracts Eligible Class", 				"ELGBL_PRSN_" 			& abbr, covr
+	validateField 		"Member Group Description", 				"MBR_GRP_DESC_" 		& abbr, covr
+	validateField 		"Solar Member Group Key", 					"SLR_MBR_GRP_KEY_" 		& abbr, covr
+	validateField 		"Domestic Partner", 						"DOMESTIC_PARTNER_" 	& abbr, covr
+	validateField 		"Minimum Periodic Hours", 					"MIN_PERIODIC_HRS_" 	& abbr, covr
+	validateField 		"Periodic Hours Definition", 				"PERIODIC_HRS_DEF_" 	& abbr, covr
+	validateField 		"Contribution Type", 						"CONTRIB_" 				& abbr, covr
+	if not (covr = "Accident") then
+		validateField 	"Contractual Participation Percent", 		"CONTRACT_PART_" 		& abbr, covr
+	end if
+	validateField 		"Participation Agreement", 					"PARTIC_ARRNGMT_" 		& abbr, covr
+	validateField 		"Bill Proration Method", 					"BILL_PROR_METH_" 		& abbr, covr
+	validateField 		"This is a benefit", 						"THIS_IS_A_CELL_BEN_" 	& abbr, covr
+end function
+
+' --------------- validateSection2 ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields in the second section of WS tabs.
+' Parameters:			<abbr>		3-character abbreviation for coverage
+'						<covr>		Effective date, formatted in DD-MMM-YYYY
+' Returns:			Nothing.
+function validateSection2(abbr, covr)
+	validateField	"Issue Service Requirement", 					"ISS_SRVC_RQT_" 		& abbr, covr
+	validateField	"Mode 0",										"ISS_SRVC_RQT_MOD_" 	& abbr, covr
+	validateField	"Future Service Requirement",					"FUT_SRVC_RQT_" 		& abbr, covr
+	validateField	"Mode 1",										"FUT_SRVC_RQT_MOD_" 	& abbr, covr
+	validateField	"Entry Date",									"ENTRY_DT_" 			& abbr, covr
+	validateField	"Special Entry Date",							"SPC_ENTRY_DT_" 		& abbr, covr
+	validateField	"Term Date",									"TERM_DT_" 				& abbr, covr
+	validateField	"Special Term Date",							"SPC_TERM_DT_" 			& abbr, covr
+	validateField	"Term Date Mode",								"TERM_DT_MODE_" 		& abbr, covr
+end function
+
+' --------------- validateSectionClassMbrGrp ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields in the section of WS tabs starting witih class/member group.
+' Parameters:			<abbr>		3-character abbreviation for coverage
+'						<covr>		Effective date, formatted in DD-MMM-YYYY
+' Returns:			Nothing.
+function validateSectionClassMbrGrp(abbr, covr)
+	if not (abbr = "CAN" or abbr = "CIB") then
+		validateField	"Child Limiting Age", 						"CH_MAX_AGE_" 			& abbr, covr
+	end if
+	if not (abbr = "GAP") then
+		validateField 	"Student Max Age", 							"STUD_MAX_AGE_" 		& abbr, covr
+	end if
+	validateField 		"Contract Type", 							"CNTRCT_TYPE_" 			& abbr, covr
+	validateField 		"Seies", 									"SERIES_" 				& abbr, covr
+end function
+
+' --------------- validateSectionSolar ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields in the Solar section of WS tabs.
+' Parameters:			<abbr>		3-character abbreviation for coverage
+'						<covr>		Effective date, formatted in DD-MMM-YYYY
+' Returns:			Nothing.
+function validateSectionSolar(abbr, covr)
+	validateField	"Solar Group ID", 								"SOLAR_GRP_ID_" 		& abbr, covr
+	validateField	"Solar Sched. Seq. No", 						"SOLAR_SCHED_SEQ_NUM_"	& abbr, covr
+	validateField	"Solar Seq No", 								"SOLAR_SEQ_NUM_"		& abbr, covr
+	validateField	"Application Signature Date", 					"APP_SIG_DT_"			& abbr, covr
+	validateField	"Plan Type", 									"PLAN_TYPE_"			& abbr, covr
+	validateField	"Sub Plan/Plan ID", 							"PLAN_TYPE_ID_SUB_"		& abbr, covr
+	validateField	"Administration Type", 							"SL_RTNG_ADMIN_"		& abbr, covr
+	validateField	"TPA Allowance Percent", 						"TPA_ALLOW_"			& abbr, covr
+	validateField	"Risk", "RISK_" & abbr, covr
+	validateField	"Actual Participation Percentage", 				"ACT_PARTIC_PCT_"		& abbr, covr
+	validateField	"Rate Guarantee in Months", 					"RATE_GUAR_MO_"			& abbr, covr
+	validateField	"Pooling Code", 								"POOLING_CD_"			& abbr, covr
+	validateField	"Rate Change Reason Code", 						"RT_CHG_RSN_CD_"		& abbr, covr
+	if (abbr = "CIB") then abbr = "CI"
+	validateField "Age-Banded Rates", 								"AGE_RATES_"			& abbr, covr
+end function
+
+' --------------- validateSection125 ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields in the Section 125 section of WS tabs.
+' Parameters:			<abbr>		3-character abbreviation for coverage
+'						<covr>		Effective date, formatted in DD-MMM-YYYY
+' Returns:			Nothing.
+function validateSection125(abbr, covr)
+	validateField 		"Section 125", 								"S125_PLAN_" 			& abbr, covr
+	validateField 		"Section 125 Tax Option",					"S125_TAX_" 			& abbr, covr
+	if not (abbr = "GAP" or abbr = "ACC") then
+		validateField 	"Employer Contribution Amount", 			"EMP_CNTRB_MO_" 		& abbr, covr
+	end if
+	if not (abbr = "CAN" or abbr = "ACC" or abbr = "GAP") then
+		validateField 	"Employee Contribution Amount",				"EE_CNTRB_MO_" 			& abbr, covr
+	end if
+	validateField 		"Commission Scale",							"COMM_SCALE_" 			& abbr, covr
+	if not (abbr = "CAN" or abbr = "GAP" or abbr = "ACC") then
+		validateField 	"Minimum Number of Participating Lives",	"MIN_PART_LVS_" 		& abbr, covr
+	end if
+	validateField 		"Service Fee", 								"SERVICE_FEE_" 			& abbr, covr
+	validateField		"Brokers Broker Fee",						"BROKER_FEE_" 			& abbr, covr
+end function
+
+'======================================================================================================================================
+'============================== COVERAGE TAB VALIDATION ===============================================================================
+'======================================================================================================================================
+
+' --------------- validateAccidentTab ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields under the accident tab.
+' Returns:			Nothing.
+function validateAccidentTab
+	validateSection1 		"ACC", 									"Accident"
+	validateSection2 		"ACC", 									"Accident"
+	validateAccidentField 	"Accident Type", 						"ACC_TYPE"
+	validateAccidentField 	"Spouse Disability Benefit", 			"SP_DSBLTY_DUR"
+	validateAccidentField 	"Spouse Disability Benefit Amount", 	"SP_DSBLTY_AMT"
+	validateAccidentField 	"Wellness", 							"WELLNESS_BNFT_ACC"
+	validateAccidentField 	"Emergency Room", 						"EMERGENCY_ROOM"
+	validateAccidentField 	"Non-Emergency Room", 					"NON_EMERG_ROOM"
+	validateAccidentField 	"Employee Accidental Death", 			"ACCIDENTAL_DEATH"
+	validateAccidentField 	"Child Limiting Age", 					"CH_MAX_AGE_ACC"
+	validateAccidentField 	"Student Max Age", 						"STUDENT_AGE_ACC"
+	validateAccidentField 	"Contract Type", 						"CNTRCT_TYPE_ACC"
+	validateAccidentField 	"Seies", 								"SERIES_ACC"
+	validateSection125 		"ACC", 									"Accident"
+	validateSectionSolar 	"ACC", 									"Accident"	
+end function
+
+' --------------- validateCibTab ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields under the Critical Illness tab.
+' Returns:			Nothing.
+function validateCibTab
+	validateSection1 			"CIB", 									"CI"
+	validateSection2 			"CIB", 									"CI"
+	validateCibField 			"Level", 								"LEVEL_CIB"
+	validateCibField 			"Wellness", 							"WELLNESS_CIB"
+	validateCibField 			"Recurrence Benefit", 					"RECRRNC_CIB"
+	validateCibField 			"Recurrence Timeframe", 				"RECRRNC_TIME_CIB"
+	validateCibField 			"Additional Occurance", 				"ADDNL_OCCRNC_CIB"
+	validateCibField 			"Employee Minimum Schedule Amount", 	"MIN_BNFT_EE_CIB"
+	validateCibField 			"Employee Maximum Schedule Amount", 	"MAX_BNFT_EE_CIB"
+	validateCibField 			"Spouse Minimum Schedule Amount", 		"MIN_BNFT_SP_CIB"
+	validateCibField 			"Spouse Maximum Schedule Amount", 		"MAX_BNFT_SP_CIB"
+	validateCibField 			"Child Minimum Schedule Amount", 		"MIN_BNFT_CH_CIB"
+	validateCibField 			"Child Maximum Schedule Amount", 		"MAX_BNFT_CH_CIB"
+	validateCibField 			"Employee Unit Amount", 				"UNIT_AMT_CIB"
+	validateCibField 			"Employee GI", 							"EMPLOYEE_GI_CIB"
+	validateCibField 			"Unit of Rounding for Age Deductions",	"REDUC_RND_AMT_CIB"
+	validateCibField 			"Rounding Type", 						"REDUC_RND_TYP_CIB"
+	validateCibField 			"Reduction", 							"REDUCTION_CIB"
+	validateCibField 			"Pre-Existing", 						"PRE_EXST_CIB"
+	validateCibField 			"Waive Prior Coverage Pre Ex", 			"PR_CVG_CIB"
+	validateCibField			"Increase Subject To New Pre Ex", 		"INCR_PRE_EXST_CIB"
+	validateSectionClassMbrGrp	"CIB", "CI"
+	validateSection125			"CIB", "CI"
+	validateSectionSolar		"CIB", "CI"
+end function
+
+' --------------- validateCancerTab ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields under the Cancer tab.
+' Returns:			Nothing.
+function validateCancerTab
+	validateSection1			"CAN", 			"Cancer"
+	validateSection2			"CAN",			"Cancer"
+	validateEOI
+	validateCancerField			"Pre-Existing",	"PRE_EXIST_CAN"
+	validateSectionClassMbrGrp	"CAN",			"Cancer"
+	validateSection125			"CAN",			"Cancer"
+	validateSectionSolar		"CAN",			"Cancer"
+end function
+
+' --------------- validateGapTab ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields under the Gap tab.
+' Returns:			Nothing.
+function validateGapTab
+	validateSection1 			"GAP",			"Gap"
+	validateSection2 			"GAP",			"Gap"
+	validateGapField 			"Inpatient",	"INPATIENT_BNFT_GAP"
+	validateGapField 			"Outpatient",	"OUTPATIENT_BNFT_GAP"
+	validateGapField 			"Physician",	"PHYSICIAN_BNFT_GAP"
+	validateGapField 			"Wellness",		"WELLNESS_BNFT_GAP"
+	validateGapField 			"Benefit Year",	"BNFT_YEAR_GAP"
+	validateSectionClassMbrGrp	"GAP",			"Gap"
+	validateSection125			"GAP",			"Gap"
+	validateSectionSolar		"GAP",			"Gap"
+end function
+
+' --------------- validatePolicy ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Validates all fields in the Policy tab.
+' Parameters:			<pol_no>	COMPASS policy #
+' Returns:			Nothing.
+function validatePolicy(pol_no)
+	clickTab "Policy"
+	set global_rs = getPolicy(pol_no)
+	waitLoad()
+
+    validatePolicyField		"Nature of business", 						"NATURE_BUS_POL"
+	validatePolicyField 	"Industry Code", 							"IND_CODE_POL"
+	validatePolicyField 	"Tax ID Number", 							"TAX_ID_NO_POL"
+	validatePolicyField 	"Employer Type", 							"EMPLOYER_TYPE_POL"
+	validatePolicyField 	"Legal Entity",								"LEGAL_ENTTY_POL"
+	validatePolicyField 	"Post Scheme Install Status",				"POST_SCHEME_INSTALL_STAT_POL"
+	validatePolicyField 	"Scheme Original Effective Date",			"ORIG_EFF_DT_POL"
+	'  ASSOCIATED COMPANIES ?
+	validatePolicyField 	"Policy Issue State",						"CONTRACT_ST_POL"
+	validatePolicyField 	"Tax State",								"TAX_ST_POL"
+	validatePolicyField 	"Tax City",									"CITY_CD_POL"
+	validatePolicyField 	"Tax County",								"COUNTY_POL"
+	validatePolicyField 	"Block of Business Code",					"BLOCK_BSNSS_POL"
+	validatePolicyField 	"Cert Code", 								"CERT_PREP_CD_POL"
+	validatePolicyField 	"Booklet Code",								"SOLAR_CD_POL"
+	validatePolicyField 	"Readable Code",							"CTRT_POL"
+	validatePolicyField 	"Scheme Provider",							"COMPANY_CD_POL"
+	validatePolicyField 	"Policy Type",								"POL_TYPE_POL"
+
+	validatePolicyField 	"Life claim pay",							"CLAIM_PAY_LIF_POL"
+	validatePolicyField 	"Dental claim pay",							"CLAIM_PAY_DEN_POL"
+	validatePolicyField 	"Disability claim pay",						"CLAIM_PAY_LTD_POL"
+	validatePolicyField 	"Discount card",							"DISCOUNT_CARD_POL"
+	validatePolicyField 	"Account Executive",						"ACCT_EXEC_POL"
+	validatePolicyField 	"Service Team",								"SERV_TEAM_POL"
+	validatePolicyField 	"Customer Tier",							"CUSTOMER_TIER_POL"
+	validatePolicyField 	"Manual Processing Required",				"MANUAL_PROCESS_REQ_POL"
+	validatePolicyField 	"Tier Reason",								"TIER_REASON_POL"
+	validatePolicyField 	"E-Commerce",								"ECOMMERCE_POL"
+	validatePolicyField 	"Distribution Channel",						"DSTRB_CHNL_POL"
+	validatePolicyField 	"Census indicator",							"CENSUS_IND_POL"
+	validatePolicyField 	"Marketing Arrangement",					"MRKTNG_ARRNGMT_POL"
+	validatePolicyField 	"Business Arrangement",						"BSNSS_ARRANGMENT_POL"
+	validatePolicyField 	"Initial Bill Prep",						"BILL_CERT_PREP_POL"
+	validatePolicyField 	"Employee Assistance Program",				"EMP_ASST_PROG_POL"
+	validatePolicyField 	"Multiple Systems",							"MULTIPLE_SYSTEMS_POL"
+	validatePolicyField 	"Other AEB Policies",						"OTHER_FORTIS_POLICIES_POL"
+	validatePolicyField 	"Employees outside the U.S.",				"EMP_NOT_IN_USA_POL"
+	validatePolicyField 	"Employees not A.A.W",						"ACTVLY_AT_WORK_POL"
+	validatePolicyField 	"Administration",							"ADMIN_POL"
+	validatePolicyField 	"Premium remitted net of TPA Allowance",	"NET_TPA_ALLOW_POL"
+	validatePolicyField 	"Premium remitted net of commission",		"NET_COMM_POL"
+	validatePolicyField 	"Privacy",									"PRIVACY_POL"
+	validatePolicyField 	"Remote",									"REMOTE_POL"
+	validatePolicyField 	"Status",									"STATUS_POL"
+	validatePolicyField 	"Status Date",								"STATUS_DT_POL"
+
+	validatePolicyField 	"Cancel/Rewrite/Spinoff",					"ACTN_TYPE_POL"
+	validatePolicyField 	"Cancel/Rewrite/Spinoff Old Scheme No.",	"CANCEL_REWRITE_OLD_POL"
+	validatePolicyField 	"Cancel/Rewrite/Spinoff Prior Coverage",	"CASE_TYPE_COV_POL"
+
+	validatePolicyField 	"Annual Enrollment Type",					"ENRLL_TYPE_DEN_POL"
+	validatePolicyField 	"Issue Begin Date",							"ENRLL_BEG_PRD_DEN_POL"
+	validatePolicyField 	"Issue End Date",							"ENRLL_END_PRD_DEN_POL"
+	validatePolicyField 	"Annual Enrollment Effective Date",			"ANNUAL_ENRLL_EFF_DT_POL"
+	validatePolicyField 	"Future Begin Date",						"FUT_BEG_PRD_POL"
+	validatePolicyField 	"Future End Date",							"FUT_END_PRD_POL"
+
+	validatePolicyField 	"ASO/CSO Dental Coverages",					"ASO_CSO_COVG_DEN"
+	validatePolicyField 	"ASO/CSO LTD Coverages",					"ASO_CSO_COVG_LTD"
+	validatePolicyField 	"ASO/CSO STD Coverages",					"ASO_CSO_COVG_STD"
+	validatePolicyField 	"ASO/CSO Plan Info",						"ASO_CSO_PLAN_INFO_POL"
+	validatePolicyField 	"ASO/CSO Policy Number",					"ASO_CSO_POLICY_NUM_POL"
+	validatePolicyField 	"Disability Benefit Tax Option",			"DIS_BNFT_TAX_OPT_LTD_POL"
+
+	validatePolicyField 	"Policy Anniversary Date",					"POL_ANNIV_DT_POL"
+	validatePolicyField 	"PARR Code", 								"PARR_CD_POL"
+	validatePolicyField 	"Renewal Type",								"RENEW_TYP_POL"
+	validatePolicyField 	"Deliver Rate Letter",						"DLVR_RT_LTTR_POL"
+	validatePolicyField 	"Combined Dividends",						"COMB_DIV_POL"
+	validatePolicyField 	"Plans Combined for Rating",				"PLAN_COMB_POL"
+	validatePolicyField 	"Schemes Combined for Rating",				"SCHEME_COMB_POL"
+	validatePolicyField 	"Other Scheme Numbers",						"OTH_SCHEM_NO_POL"
+end function
+
+'======================================================================================================================================
+'============================== WRAPPER FUNCTIONS =====================================================================================
+'======================================================================================================================================
+'======================= Functions below this line are simply wrappers for other functions, and do not need any =======================
+'======================= further commenting, as the functions they're calling have already been commented. ============================
+'======================================================================================================================================
+
+' --------------- validateCovrTab ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Wrapper function for validating WS tabs, created just for use in the validateCoverage function.
+' Parameters:			<pol_no>	COMPASS policy #
+' Returns:			Nothing.
+function validateCovrTab(tab_nm)
+	if (tab_nm = "Accident") 			then validateAccidentTab()	end if
+	if (tab_nm = "Critical Illness") 	then validateCibTab()		end if
+	if (tab_nm = "Cancer") 				then validateCancerTab()	end if
+	if (tab_nm = "Gap") 				then validateGapTab()		end if
+end function
+
+function validateAccident(pol_no, eff_dt)
+	validateCoverage pol_no, eff_dt, "Accident", "Accident"
+end function
+
+function validateCib(pol_no, eff_dt)
+	validateCoverage pol_no, eff_dt, "Critical Illness", "CI"
+end function
+
+function validateCancer(pol_no, eff_dt)
+	validateCoverage pol_no, eff_dt, "Cancer", "Cancer"
+end function
+
+function validateGap(pol_no, eff_dt)
+	validateCoverage pol_no, eff_dt, "Gap", "Gap"
+end function
+
+function validatePolicyField(nm, col)
+	validateField nm, col, "Policy"
+end function
+
+function validateAccidentField(nm, col)
+	validateField nm, col, "Accident"
+end function
+
+function validateCibField(nm, col)
+	validateField nm, col, "CI"
+end function
+	
+function validateCancerField(nm, col)
+	validateField nm, col, "Cancer"
+end function
+
+function validateGapField(nm, col)
+	validateField nm, col, "Gap"
+end function

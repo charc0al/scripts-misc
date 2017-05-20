@@ -1,0 +1,210 @@
+Calc: 04/26/2012 10:36:37               GAP Plan Summary           Print: 05/07/2012 10:31:46
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       4                 Grouping:       N/A
+Base Plan Type: GAP               Base Plan Seq:  4
+Sub Plan:       GAP               Plan Indicator: N/A
+Grp Office:     60                Series:         GAP-FSL
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 2k-1k - Created by conversion
+
+Voluntary:             Yes                    Rated Commissions:     Flat 15.00
+Administration:        Home Office            Rated Commission Desc: 15% Flat
+TPA Allow %:           N/A                    Paid Commissions:      15% Flat
+Employer Contrib:      None                   Service Fee:           No Service Fee
+Contrib  :             N/A                    Broker's Broker Fee:   No Broker's Broker Fee
+Employer Dep Contrib:  None                   Consulting Fees:       None
+Contrib  :             N/A                    Marketing Fee %:       0.00
+Section 125:           None                   Annual Enroll Type:    Full Open @ Issue/Annual in
+Contract State:        KY                     Issue:                 06/01 to 06/30
+Contract Type:         FSL                    Future:                06/01 to 06/30
+Contract Options:      MG111                  Domestic Partner:      N/A
+Rate Guarantee:        12 months              Dependent Eligibility
+SIC Code:              8741                      Limiting Age:       26
+SIC Description:       MANAGEMENT SERVICES       Student:            N
+Prior Cov:             N/A                       Student Max Age:    26
+Census Type:           Eligible               Participation %
+Transfer:              No                        Employee:           0
+Billing Frequency:     Monthly (12)              Dependent:          0
+
+GAP
+Inpatient:                           $ 2,000
+Outpatient:                          $1,000
+Physician:                           N/A
+Wellness:                            N/A
+Benefit Year:                        Calendar
+
+Rate Structure:        Employee + Family
+
+                            Employee     EE+Spouse      EE+Child     EE+Family
+Total Gap Rate
+18-39                          27.11         48.85         59.93         81.64
+40-49                          36.76         66.17         67.67         97.04
+50+                            61.95        111.47        100.32        149.80
+
+                            Employee        Spouse         Child        Family
+Total Gap Rate
+18-39                          27.11         21.74         32.82         54.53
+40-49                          36.76         29.41         30.91         60.28
+50+                            61.95         49.52         38.37         87.85
+
+
+No adjustments were applied.
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 10:36:37               GAP Factors           Print: 05/07/2012 10:31:46
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       4                 Grouping:       N/A
+Base Plan Type: GAP               Base Plan Seq:  4
+Sub Plan:       GAP               Plan Indicator: N/A
+Grp Office:     60                Series:         GAP-FSL
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 2k-1k - Created by conversion
+
+
+Net Rates:                       Employee     EE+Spouse      EE+Child     EE+Family
+  Inpatient
+    18-39                          7.2800       13.1200       16.4400       22.2800
+    40-49                         10.5600       19.0000       19.7200       28.1600
+    50+                           14.2000       25.5600       23.3600       34.7200
+  Outpatient
+    18-39                          7.6300       13.7500       16.5200       22.6200
+    40-49                          9.6600       17.3900       17.5000       25.2100
+    50+                           19.8700       35.7500       31.8200       47.6700
+
+Rate Guarantee:                    1.0000        1.0000        1.0000        1.0000
+State Additive Factor:             0.0000        0.0000        0.0000        0.0000
+State Multiplicative Factor:       1.0000        1.0000        1.0000        1.0000
+Retention Adjustment:              1.8182        1.8182        1.8182        1.8182
+Modal Factor:                      1.0000        1.0000        1.0000        1.0000
+
+Gross Rates:
+  Inpatient
+    18-39                         13.2400       23.8500       29.8900       40.5100
+    40-49                         19.2000       34.5500       35.8500       51.2000
+    50+                           25.8200       46.4700       42.4700       63.1300
+  Outpatient
+    18-39                         13.8700       25.0000       30.0400       41.1300
+    40-49                         17.5600       31.6200       31.8200       45.8400
+    50+                           36.1300       65.0000       57.8500       86.6700
+  Total
+    18-39                         27.1100       48.8500       59.9300       81.6400
+    40-49                         36.7600       66.1700       67.6700       97.0400
+    50+                           61.9500      111.4700      100.3200      149.8000
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 10:36:37               GAP Census           Print: 05/07/2012 10:31:46
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       4                 Grouping:       N/A
+Base Plan Type: GAP               Base Plan Seq:  4
+Sub Plan:       GAP               Plan Indicator: N/A
+Grp Office:     60                Series:         GAP-FSL
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: 2k-1k - Created by conversion
+
+Census:           Eligible EE's
+
+               Total        Total     EES with     EES with     EES with     EES with
+            Male EES   Female EES      EE Only      Sp Only      Ch Only      Sp & Ch
+00 - 39          167            0          167            0            0            0
+40 - 49            0            0            0            0            0            0
+50 +               0            0            0            0            0            0
+
+Total:           167            0          167            0            0            0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+

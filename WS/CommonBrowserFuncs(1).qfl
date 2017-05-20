@@ -1,0 +1,275 @@
+' ----------------------------------- Common Browser Function Library -----------------------------------
+' Library of general browser / test functions
+' Author : Charlie Mehrer
+' Funcs : 
+'			function	camelCase							(	nm_str													)
+'			function	clearValidationHilighting			(															)
+'			function	clickBtn							(	str														)
+'			function	clickDialogBtn						(	str														)
+'			function	doLogin								(	env,			username,		password				)
+'			function	getCB								(															)
+'			function	getMsgText							(															)
+'			function	jumpTo								(	html_id													)
+'			function	js									(	str														)
+'			function	jsPatch								(															)
+'			function	mouseEvent							(	htmlId,			eventStr								)
+'			function	randomAlphaNumeric					(	numChars												)
+'			function	regExMatch							(	haystack,		needle									)
+'			function	setCB								(	newText													)
+'			function	quoted								(	str														)
+'			function	validateElement						(	label,			html_id,		expectedValue,		typ	)
+'			function	waitForLoad							(															)
+'			function	writeResults						(	eventStatus,	reportStepName,	details					)
+'
+' --------------------------------------------- History of Change ----------------------------------------------
+'	Name				Date			Description
+'	----				----			-----------
+'	Charlie Mehrer		2012-06-20		Initial load to Quality Center.
+'	Charlie Mehrer		2012-06-26		Added camelCase
+'	Charlie Mehrer		2012-07-05		Added function list / history of change
+'	Charlie Mehrer		2012-07-09		Modified validateElement - passes get attribute "validated=1" and fails get "validated=0"
+
+randomize time
+Reporter.Filter = rfDisableAll 
+Set theBrowser = Browser("micclass:=Browser")
+Set thePage = theBrowser.Page("micclass:=Page")
+Set jsAlert = theBrowser.Dialog("nativeclass:=#32770")
+
+env = "stage2"
+random = ":random:"
+logInputs = true
+idReplaceRegEx = "[\s\-\/()\.]+"
+jsPatch()
+
+function doLogin(env, username, password)
+	theBrowser.Navigate("https://" & env & ".assurantemployeebenefits.com/wps/portal/home")
+	wait(1)
+	theBrowser.Navigate("https://" & env & ".assurantemployeebenefits.com/wps/portal/OMIT/OAMainLogin")
+    js("document.getElementsByName('USERNAME')[0].value='" & username & "';document.getElementsByName('PASSWORD')[0].value='" & password & "';document.getElementsByName('PASSWORD')[0].focus();")
+    js("document.getElementsByName('login')[0].click()")
+	wait(1)
+	js("window.clipboardData.setData('Text', 'False');links = document.getElementById('admintd').getElementsByTagName('a');for(i=0;i<links.length;i++){if(links[i].innerText=='Logout'){window.clipboardData.setData('Text', 'True');}}")
+end function
+
+' --------------- validateElement ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Validates an on-screen element against an expected value
+' Parameters:			<label>				String describing the value, for result logging only.
+'						<html_id>			HTML id of the element being validated
+'						<expectedValue>		Expected correct value of on-screen element.
+'						<typ>				String containing the data type of the expected value. Either "string","double", or "date"
+' Returns:			Nothing
+function validateElement(label, html_id, expectedValue, typ)
+	environment("html_id") = html_id
+	set obj = Browser("browser").Page("page").WebElement("html_id")
+	if (typ = "string") then
+		foundValue = 	regExReplace(CStr(obj.GetROProperty("innertext")), "^[\s]+", "") 'remove leading spaces
+	elseif (typ = "double")	then
+		foundValue = 	CDbl(obj.GetROProperty("innertext"))
+	elseif (typ = "int")	then
+		foundValue = 	CInt(obj.GetROProperty("innertext"))
+	elseif (typ = "date")	then
+		foundValue = 	CDate(obj.GetROProperty("innertext"))
+	end if
+	if isNull(expectedValue) then expectedValue = "" end if
+	if(CStr(foundValue) = CStr(expectedValue)) then
+		color = "#00FF00" 'green
+		validNum = 1
+		writeResults micPass, policy_no & ": " & label, quoted(foundValue) & " (on-screen) = " & quoted(expectedValue) & " (expected)"
+	else
+		color = "#FF0000" 'red
+		validNum = 0
+		writeResults micFail, policy_no & ": " & label, quoted(foundValue) & " (on-screen) =/= " & quoted(expectedValue) & " (expected)"
+	end if
+	js "document.getElementById('" & html_id & "').style.background = '" & color & "';"	'set background color, green = correct, red = incorrect
+	js "document.getElementById('" & html_id & "').setAttribute('onclick','alert(" & quoted("Expected: " & expectedValue) & ")');" 'set onclick event, so when the user clicks a hilighted element, a popup shows the expected value
+	js "document.getElementById('" & html_id & "').setAttribute('validated','" & validNum & "');" 'add "validated" attribute to element, so all hilighting/onclick events can be removed later
+end function
+
+' --------------- getMsgText ---------------
+' Author:			Charles Mehrer, 2012-04-05
+' Description:		Gets the text inside a javascript popup window and closes it.
+' Returns:			String containing the text inside the javascript popup window.
+function getMsgText()
+	Set jsAlert = theBrowser.Dialog("nativeclass:=#32770")
+	if jsAlert.Exist(1000) then
+		msgText = jsAlert.Static("nativeclass:=static","index:=1").GetROProperty("text")
+		jsAlert.Close
+	end if
+	getMsgText = msgText
+end function
+
+' --------------- getCB ---------------
+' Author:			Charles Mehrer, 2012-04-05
+' Description:		Gets the contents of the Windows clipboard.
+' Returns:			Contents of the clipboard.
+function getCB()
+	Set objDFComputer=DotNetFactory("Microsoft.VisualBasic.Devices.Computer","Microsoft.VisualBasic")
+	Set objCB=objDFComputer.ClipBoard
+	getCB = objCB.GetText
+end function
+
+' --------------- setCB ---------------
+' Author:			Charles Mehrer, 2012-04-05
+' Description:		Sets the contents of the Windows clipboard.
+' Parameters:		<new_clipboard_text>	Exactly what it sounds like.
+function setCB(new_clipboard_text)
+	Set objDFComputer=DotNetFactory("Microsoft.VisualBasic.Devices.Computer","Microsoft.VisualBasic")
+	Set objCB=objDFComputer.ClipBoard
+	objCB.setText(new_clipboard_text)
+end function
+
+' --------------- jsPatch ---------------
+' Author:			Charles Mehrer, 2012-04-01
+' Description:		Defines common javascript functions for IE because it sucks and doesn't support them by default
+function jsPatch()
+	js("Element.prototype.getElementsByClassName = function(class_name) {var docList = this.all || this.getElementsByTagName('*');var matchArray = new Array();var re = new RegExp('(?:^|\\s)'+class_name+'(?:\\s|$)');for (var i = 0; i < docList.length; i++) {if (re.test(docList[i].className) ) {matchArray[matchArray.length] = docList[i];}}return matchArray;}")
+	js("HTMLDocument.prototype.getElementsByClassName = function(class_name) {var docList = this.all || this.getElementsByTagName('*');var matchArray = new Array();var re = new RegExp('(?:^|\\s)'+class_name+'(?:\\s|$)');for (var i = 0; i < docList.length; i++) {if (re.test(docList[i].className) ) {matchArray[matchArray.length] = docList[i];}}return matchArray;}")
+	js("HTMLTableRowElement.prototype.getElementsByClassName = function(class_name) {var docList = this.all || this.getElementsByTagName('*');var matchArray = new Array();var re = new RegExp('(?:^|\\s)'+class_name+'(?:\\s|$)');for (var i = 0; i < docList.length; i++) {if (re.test(docList[i].className) ) {matchArray[matchArray.length] = docList[i];}}return matchArray;}")
+    js("HTMLTableSectionElement.prototype.getElementsByClassName = function(class_name) {var docList = this.all || this.getElementsByTagName('*');var matchArray = new Array();var re = new RegExp('(?:^|\\s)'+class_name+'(?:\\s|$)');for (var i = 0; i < docList.length; i++) {if (re.test(docList[i].className) ) {matchArray[matchArray.length] = docList[i];}}return matchArray;}")
+	js("Element.prototype.getElementsByAttribute = function(val, attr_name) {var docList = this.all || this.getElementsByTagName('*');var matchArray = new Array();var re = new RegExp('(?:^|\\s)'+attr_name+'(?:\\s|$)');for (var i = 0; i < docList.length; i++) {if (re.test(docList[i].getAttribute(val)) ) {matchArray[matchArray.length] = docList[i];}}return matchArray;}")
+	js("HTMLDocument.prototype.getElementsByAttribute = function(val, attr_name) {var docList = this.all || this.getElementsByTagName('*');var matchArray = new Array();var re = new RegExp('(?:^|\\s)'+attr_name+'(?:\\s|$)');for (var i = 0; i < docList.length; i++) {if (re.test(docList[i].getAttribute(val)) ) {matchArray[matchArray.length] = docList[i];}}return matchArray;}")
+end function
+
+' ------------------ js --------------------
+' Author:			Charles Mehrer, 2012-04-01
+' Description:		Runs any javascript in the browser.
+' Parameters:			<str>	The string of javascript you wish to send to the browser
+' Notes:			I had to wrap the javascript in function a() and call it, because IE was having problems executing simple javascripts containing assignment statements otherwise.
+function js(str)
+	theBrowser.Navigate("javascript:function a(){" & str & "} a();")
+end function
+
+' ------------------ quoted ------------------
+' Author:			Charles Mehrer, 2012-04-23
+' Description:		Returns string with quotes around it
+function quoted(str)
+   quoted = chr(34) & str & chr(34)
+end function
+
+'======================================================================================================================================
+'===============================QTP FUNCTIONS==========================================================================================
+'======================================================================================================================================
+function writeResults(eventStatus, reportStepName, details)
+	Dim currentMode : currentMode = Reporter.Filter 
+	Reporter.Filter = rfEnableAll 
+	Reporter.ReportEvent eventstatus, reportstepname, details
+	Reporter.Filter = currentMode 
+end function
+
+' --------------- waitForLoad ---------------
+' Author:			Charles Mehrer, 2012-04-01
+' Description:		Waits until the "Request being processed" window disappears
+' Parameters:			<jscript>	Any javascript string to run after the dialog disappears (this can be left as "" if you don't want to run anything)
+function waitForLoad()
+ 	'clipStored = getClipBoard()
+	clipStored = getCB()
+ 	wait(1)
+	jscript = "window.clipboardData.setData('Text', 'doneLoading');"
+	js("function waitLoad(){if(document.getElementsByClassName('dialogTopLeft').length){window.setTimeout(waitLoad,200);}else{" & jscript & "}} waitLoad();")
+	do
+		if(getCB() = "doneLoading") then
+			js("window.clipboardData.setData('Text', '" & clipStored & "');")
+			exit do
+		end if
+	loop while true
+	applyIDs()
+end function
+
+' --------------- mouseEvent ---------------
+' Author:			Charles Mehrer, 2012-06-20
+' Description:		Fires a mouse event over an html element
+' Parameters:			<htmlId>	Html ID of element to fire mouse event on
+'						<eventStr>	String name of mouse event. i.e. - "onclick", "onmouseover"
+function mouseEvent(htmlId, eventStr)
+	js("var button = document.getElementById('" & htmlId & "');button.fireEvent('" & eventStr & "');")
+end function
+
+' --------------- randomAlphaNumeric ---------------
+' Author:			Charles Mehrer, 2012-04-12
+' Description:		Generates a random string of alphanumeric characters (capital letters and numbers)
+' Parameters:			<numChars>		The length of string you want to generate.
+' Returns:			String random alphanumeric characters of length numChars 
+function randomAlphaNumeric(numChars)
+	rs = ""
+	i = 0
+	Do
+		if(randomNumber(0,2)) then '3/4 of the time evaluates to true
+			rs = rs & chr(randomNumber(65,90)) 'append a character A-Z
+		else
+			rs = rs & chr(randomNumber(48,57)) 'append a character 0-9
+		end if
+		i=i+1
+	loop while(i<numChars)
+	randomAlphaNumeric = rs
+end function
+
+' --------------- regExMatch ---------------
+' Author:			Charles Mehrer, 2012-04-20
+' Description:		Determines if a pattern match appears in a string
+' Parameters:			<haystack>		The string to be searched
+'						<needle>		The regex to search for
+' Returns:			Number of matches in the haystack string.
+function regExMatch(haystack, needle)
+	dim objRegExp
+	set objRegExp = new RegExp
+	objRegExp.Global = True
+	objRegExp.Pattern = needle
+	set matches = objRegExp.execute(haystack)
+	regExMatch = matches.count
+end function
+
+' --------------- clickBtn ---------------
+' Author:			Charles Mehrer, 2012-04-01
+' Description:		Clicks on the first button containing the specified text (must be of class 'buttonprimary'), and waits for page to load
+' Parameters:			<str>	The text on the button you wish to click.
+function clickBtn(str)
+	'className = "buttonprimary"
+	'js("var buttons = document.getElementsByClassName('" & className & "');for(var i=0;i<buttons.length;i++){if(buttons[i].innerText=='" & str & "'){buttons[i].click();}}")
+	js("var buttons = document.getElementsByTagName('button'); for(i=0;i<buttons.length;i++){if(buttons[i].className!=''){buttons[i].setAttribute('id',buttons[i].innerText+'-button');}}")
+	js("document.getElementById(" & quoted(str & "-button") & ").disabled=false;")
+	js("document.getElementById(" & quoted(str & "-button") & ").click();")
+end function
+
+' --------------- clickDialogBtn ---------------
+' Author:			Charles Mehrer, 2012-04-25
+' Description:		Clicks on a button in a gwt DialogBox with the specified text
+' Parameters:			<str>	The text on the button you wish to click.
+function clickDialogBtn(str)
+	js("var dialogBtns = document.getElementsByClassName('gwt-DialogBox')[0].getElementsByTagName('button'); for(i=0;i<dialogBtns.length;i++){dialogBtns[i].setAttribute('id','dialogBtn-'+dialogBtns[i].innerText);}")
+	js("document.getElementById('dialogBtn-" & str & "').click()")
+	waitForLoad()
+end function
+
+' --------- clearValidationHilighting -----------
+' Author:			Charles Mehrer, 2012-04-26
+' Description:		Sets the background color back to #FFFFFF to all elements hilighted by doing validation
+function clearValidationHilighting()
+	jsPatch()
+	js("var validated = document.getElementsByAttribute('validated','1');for(i=0;i<validated.length;i++){validated[i].style.background='';validated[i].onclick='';}")
+end function
+
+' --------------- camelCase ---------------
+' Author:			Charles Mehrer, 2012-06-29
+' Description:		Formats a string in camel casing
+' Parameters:			<nm_str>	String being camelCased
+' Returns:			Camel cased string
+function camelCase(nm_str)
+	str = LCase(nm_str)
+	str = regExReplace(str,"[\/\\\.\s]+","-")
+	Dim arr, i
+	arr = Split(str, "-")
+	For i = LBound(arr) + 1 To UBound(arr)
+		arr(i) = UCase(Left(arr(i), 1)) & Mid(arr(i), 2)
+	Next
+	CamelCase = Join(arr, "")
+End Function
+
+' --------------- jumpTo ---------------
+' Author:			Charles Mehrer, 2012-07-03
+' Description:		Jumps to a particiular html id on the page
+' Parameters:			<html_id>	ID of element to jump to
+function jumpTo(html_id)
+	js "window.location=(window.location+'#" & html_id & "')"
+end function
+

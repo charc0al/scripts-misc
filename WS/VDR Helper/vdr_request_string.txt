@@ -1,0 +1,3 @@
+https://stage2.assurantemployeebenefits.com/enrollment/enrollment/vdrExcelServlet?solarId=376041&payPeriod=52&effectiveDate=20111101&isWorksiteReport=Y&userName=Test%20Super&censusGroupId=55361
+https://stage2.assurantemployeebenefits.com/enrollment/enrollment/vdrExcelServlet?solarId=376041&payPeriod=52&isWorksiteReport=Y&userName=Test%20Super
+https://www.assurantemployeebenefits.com/enrollment/enrollment/vdrExcelServlet?solarId=2619620&payPeriod=52

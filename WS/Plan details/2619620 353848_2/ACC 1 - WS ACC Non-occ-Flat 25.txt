@@ -1,0 +1,210 @@
+Calc: 04/17/2012 14:25:26               ACC Plan Summary           Print: 05/07/2012 10:28:17
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: ACC               Base Plan Seq:  2
+Sub Plan:       ACC               Plan Indicator: N/A
+Grp Office:     60                Series:         Accident
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+Voluntary:             Yes                    Rated Commissions:     Flat 60.00
+Administration:        Home Office            Rated Commission Desc: 25% Flat
+TPA Allow %:           N/A                    Paid Commissions:      WS 60% First Yr, 10% Rnl
+Employer Contrib:      None                   Service Fee:           No Service Fee
+Contrib  :             N/A                    Broker's Broker Fee:   No Broker's Broker Fee
+Employer Dep Contrib:  None                   Consulting Fees:       None
+Contrib  :             N/A                    Marketing Fee %:       0.00
+Section 125:           None                   Annual Enroll Type:    Full Open @ Issue/Annual in
+Contract State:        KY                     Issue:                 06/01 to 06/30
+Contract Type:         2011                   Future:                06/01 to 06/30
+Contract Options:      ACC2009                Domestic Partner:      N/A
+Rate Guarantee:        24 months              Dependent Eligibility
+SIC Code:              8741                      Limiting Age:       26
+SIC Description:       MANAGEMENT SERVICES       Student:            N
+Prior Cov:             N/A                       Student Max Age:    26
+Census Type:           Eligible               Participation %
+Transfer:              No                        Employee:           0
+Billing Frequency:     Monthly (12)              Dependent:          0
+
+Accident
+Accident Type:                       Non-Occupation
+Wellness:                            N/A
+Emergency Room:                      $150
+Non-Emergency Room:                  $150
+                                     Spouse Disability:
+Benefit Include:                     No
+Benefit Start On:                    N/A
+Benefit Duration                     N/A
+Benefit Amount:                      N/A
+                                     Employee                     Spouse       Children
+Accidental Death:                    $50,000                      $25,000      $12,500
+
+
+
+Rate Structure:                   Employee + Family
+
+Employee                                      13.65
+Spouse                                         9.24
+Child                                         13.58
+
+
+
+No adjustments were applied.
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/17/2012 14:25:26               ACC Factors           Print: 05/07/2012 10:28:17
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: ACC               Base Plan Seq:  2
+Sub Plan:       ACC               Plan Indicator: N/A
+Grp Office:     60                Series:         Accident
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+
+                                Employee       Spouse        Child
+Base Rates:                      14.1400       9.5800      14.0700
+
+Plan Factors:
+  Emergency Room                  1.0000       1.0000       1.0000
+  Non Emergency Room              1.0000       1.0000       1.0000
+  Accidental Death                1.0000       1.0000       1.0000
+  Wellness (+)                    0.0000       0.0000       0.0000
+  State Additive Adjustment(+)    0.0000       0.0000       0.0000
+  Transfer                        1.0000       1.0000       1.0000
+  Rate Guarantee                  1.0000       1.0000       1.0000
+
+Expense Factors:
+Commissions/Fees:                 0.9650       0.9650       0.9650
+State Multiplicative Factor:      1.0000       1.0000       1.0000
+
+Final Monthly Rate:              13.6500       9.2400      13.5800
+  Modal Factor                    1.0000       1.0000       1.0000
+Final Modal Rate:                13.6500       9.2400      13.5800
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/17/2012 14:25:26               ACC Census           Print: 05/07/2012 10:28:17
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       2                 Grouping:       N/A
+Base Plan Type: ACC               Base Plan Seq:  2
+Sub Plan:       ACC               Plan Indicator: N/A
+Grp Office:     60                Series:
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+Census:           Eligible EE's
+
+               Total        Total     EES with     EES with     EES with     EES with
+            Male EES   Female EES      EE Only      Sp Only      Ch Only      Sp & Ch
+                 167            0          167            0            0            0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+

@@ -1,0 +1,280 @@
+Calc: 04/26/2012 10:36:36               CAN Plan Summary           Print: 05/07/2012 10:29:41
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       3                 Grouping:       N/A
+Base Plan Type: CAN               Base Plan Seq:  3
+Sub Plan:       CAN               Plan Indicator: N/A
+Grp Office:     60                Series:         Level 1
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+Voluntary:             Yes                    Rated Commissions:     Flat 60.00
+Administration:        Home Office            Rated Commission Desc: 25% Flat
+TPA Allow %:           N/A                    Paid Commissions:      WS 60% First Yr, 10% Rnl
+Employer Contrib:      None                   Service Fee:           No Service Fee
+Contrib  :             N/A                    Broker's Broker Fee:   No Broker's Broker Fee
+Employer Dep Contrib:  None                   Consulting Fees:       None
+Contrib  :             N/A                    Marketing Fee %:       0.00
+Section 125:           None                   Annual Enroll Type:    Full Open @ Issue/Annual in
+Contract State:        KY                     Issue:                 06/01 to 06/30
+Contract Type:         2009                   Future:                06/01 to 06/30
+Contract Options:      CAN2009                Domestic Partner:      N/A
+Rate Guarantee:        24 months              Dependent Eligibility
+SIC Code:              8741                      Limiting Age:       26
+SIC Description:       MANAGEMENT SERVICES       Student:            N
+Prior Cov:             N/A                       Student Max Age:    26
+Census Type:           Eligible               Participation %
+Transfer:              No                        Employee:           0
+Billing Frequency:     Monthly (12)              Dependent:          0
+
+Cancer
+EOI:                   Yes
+
+Rate Structure:        Employee + Family
+
+                            Employee        Spouse         Child
+Uni-Tobacco Rates
+18-39                          11.44          8.01          1.12
+40-49                          11.44          8.01          1.12
+50-59                          14.10          9.87          1.12
+60-64                          22.48         15.73          1.12
+65+                            30.11         21.07          1.12
+
+
+No adjustments were applied.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 10:36:36               CAN Factors           Print: 05/07/2012 10:29:41
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       3                 Grouping:       N/A
+Base Plan Type: CAN               Base Plan Seq:  3
+Sub Plan:       CAN               Plan Indicator: N/A
+Grp Office:     60                Series:         Level 1
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+
+Base Rates:                        Employee       Spouse        Child
+  Uni-Smoker
+    18-39                           11.8500       8.3000       1.1600
+    40-49                           11.8500       8.3000       1.1600
+    50-59                           14.6100      10.2300       1.1600
+    60-64                           23.3000      16.3000       1.1600
+    65-99                           31.2000      21.8300       1.1600
+
+State Additive Adjustment (+):       0.0000       0.0000       0.0000
+
+Commissions/Fees:                    0.9650       0.9650       0.9650
+Transfer:                            1.0000       1.0000       1.0000
+Rate Guarantee:                      1.0000       1.0000       1.0000
+State Multiplicative Factor:         1.0000       1.0000       1.0000
+Modal Factor:                        1.0000       1.0000       1.0000
+
+Final Modal Rates:
+  Uni-Smoker
+    18-39                           11.4400       8.0100       1.1200
+    40-49                           11.4400       8.0100       1.1200
+    50-59                           14.1000       9.8700       1.1200
+    60-64                           22.4800      15.7300       1.1200
+    65-99                           30.1100      21.0700       1.1200
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 10:36:36               CAN Census           Print: 05/07/2012 10:29:41
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       3                 Grouping:       N/A
+Base Plan Type: CAN               Base Plan Seq:  3
+Sub Plan:       CAN               Plan Indicator: N/A
+Grp Office:     60                Series:
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+Census:           Eligible EE's
+
+               Total        Total     EES with     EES with     EES with     EES with
+            Male EES   Female EES      EE Only      Sp Only      Ch Only      Sp & Ch
+18 - 39          167            0          167            0            0            0
+40 - 49            0            0            0            0            0            0
+50 - 59            0            0            0            0            0            0
+60 - 64            0            0            0            0            0            0
+65 +               0            0            0            0            0            0
+
+Total:           167            0          167            0            0            0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
+Calc: 04/26/2012 10:36:36               CAN Step Rates           Print: 05/07/2012 10:29:41
+
+Group No:       353848            Group Name:     Kentucky Medical Services Foundation, Inc.
+Producer Tier:                    Producer:       Pike and Preston
+Policy No:      0                 Part No:        0
+Plan Seq:       3                 Grouping:       N/A
+Base Plan Type: CAN               Base Plan Seq:  3
+Sub Plan:       CAN               Plan Indicator: N/A
+Grp Office:     60                Series:         Level 1
+E-Commerce:     None              Eff Date:       07/01/2012
+
+Plan Description: Flat 25 - Created by conversio
+
+
+
+                            Employee        Spouse         Child
+Uni-Tobacco Rates
+18-39                          11.44          8.01          1.12
+40-49                          11.44          8.01          1.12
+50-59                          14.10          9.87          1.12
+60-64                          22.48         15.73          1.12
+65+                            30.11         21.07          1.12
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      (For Internal Use Only)
+
+
